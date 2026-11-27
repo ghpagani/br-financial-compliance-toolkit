@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Changed: row passa a ser linha fisica do arquivo; antes era indice de registro
 - Changed: exemplos movidos para dentro da skill (plugins/.../examples/); caminho da raiz removido
 
 ## 0.1.0 — initial preview

@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """Local, read-only financial checks. No statutory tax/payroll calculations."""
 import argparse
+import calendar
 import csv
 import json
+import os
 import re
 import sys
 from collections import Counter, defaultdict
 from datetime import date
 from decimal import Decimal, InvalidOperation, localcontext
 from pathlib import Path
+from uuid import uuid4
 
 VERSION = '0.1.0'
 ZERO = Decimal('0.00')
@@ -18,46 +21,75 @@ FIELDS = {
     'payroll': 'id period employee gross deductions net paid currency approval'.split(),
     'budgets': 'project category start end approved currency'.split(),
 }
+REASONS = frozenset({'HEADER', 'MALFORMED_ROW', 'DUPLICATE_ID', 'CURRENCY',
+    'OUT_OF_PERIOD', 'PARTIAL_COMPETENCE', 'INVALID_DATE', 'INVALID_AMOUNT',
+    'INVALID_REFERENCE', 'INVALID_FLAG', 'INVALID_PAYROLL', 'INVALID_BUDGET_DATES'})
 
 
-def money(value):
+class InputError(ValueError):
+    def __init__(self, reason, field=None):
+        if reason not in REASONS:
+            raise ValueError('unsupported input reason')
+        super().__init__(reason)
+        self.reason = reason
+        self.field = field
+
+
+class CsvRow(dict):
+    def __init__(self, values, line):
+        super().__init__(values)
+        self.line = line
+
+
+def money(value, field=None):
     # Explicit canonical input: no floats, exponents or locale ambiguity.
     if not isinstance(value, str) or not re.fullmatch(r'[0-9]{1,14}(?:\.[0-9]{1,2})?', value):
-        raise ValueError('invalid monetary value: expected non-negative decimal string')
+        raise InputError('INVALID_AMOUNT', field)
     return Decimal(value).quantize(CENT)
 
 
-def iso(value):
-    if not isinstance(value, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
-        raise ValueError('invalid ISO date')
-    return date.fromisoformat(value)
+def iso(value, field=None):
+    if not isinstance(value, str) or not re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}', value):
+        raise InputError('INVALID_DATE', field)
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        raise InputError('INVALID_DATE', field) from None
 
 
-def month(value):
-    if not re.fullmatch(r'\d{4}-\d{2}', value or ''):
-        raise ValueError('invalid competence YYYY-MM')
-    return iso(value + '-01')
+def month(value, field=None):
+    if not isinstance(value, str) or not re.fullmatch(r'[0-9]{4}-[0-9]{2}', value):
+        raise InputError('INVALID_DATE', field)
+    return iso(value + '-01', field)
 
 
-def token(value):
+def token(value, field=None):
     # Opaque references, not CPF, names or account details. Pattern is not anonymization.
     if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,39}', value):
-        raise ValueError('invalid reference; use opaque identifier')
+        raise InputError('INVALID_REFERENCE', field)
     return value
 
 
 def read_csv(path, kind):
     with open(path, encoding='utf-8-sig', newline='') as f:
-        reader = csv.DictReader(f, strict=True)
-        if not reader.fieldnames or len(reader.fieldnames) != len(set(reader.fieldnames)) or set(reader.fieldnames) != set(FIELDS[kind]):
+        reader = csv.reader(f, strict=True)
+        header = next(reader, None)
+        if not header or len(header) != len(set(header)) or set(header) != set(FIELDS[kind]):
             raise ValueError(f'{kind}: unexpected CSV header; consult data contract')
         rows = []
-        for i, row in enumerate(reader, 2):
-            if i > 100001:
+        while True:
+            start_line = reader.line_num + 1
+            try:
+                row = next(reader)
+            except StopIteration:
+                break
+            if not row:
+                continue
+            if len(rows) >= 100000:
                 raise ValueError('row limit exceeded (100000)')
-            if None in row or any(v is None for v in row.values()):
-                raise ValueError(f'{kind}: malformed row {i}')
-            rows.append({k: v.strip() for k, v in row.items()})
+            if len(row) != len(header):
+                raise ValueError(f'{kind}: malformed row {start_line}')
+            rows.append(CsvRow({k: v.strip() for k, v in zip(header, row)}, start_line))
         return rows
 
 
@@ -80,6 +112,12 @@ def policy_load(path):
 
 
 def review(expenses, payroll, budgets, policy):
+    with localcontext() as ctx:
+        ctx.prec = 40
+        return _review(expenses, payroll, budgets, policy)
+
+
+def _review(expenses, payroll, budgets, policy):
     findings = []
     results = []
     start, end = iso(policy['effective_from']), iso(policy['effective_to'])
@@ -96,20 +134,26 @@ def review(expenses, payroll, budgets, policy):
     def invalid(kind, n, exc):
         # Do not include arbitrary input or exception text in reports.
         add(kind,n,'INPUT_INVALID','BLOCKER','Invalid, unsupported or out-of-period input; verify schema and coverage.')
-    def common(r, day):
-        if r['currency'] != policy['currency'] or not start <= day <= end:
-            raise ValueError('out of scope')
-    def flag_value(v):
+        findings[-1]['reason'] = exc.reason if isinstance(exc, InputError) else 'MALFORMED_ROW'
+        if isinstance(exc, InputError) and exc.field is not None:
+            findings[-1]['field'] = exc.field
+    def common(r, day, field):
+        if r['currency'] != policy['currency']:
+            raise InputError('CURRENCY', 'currency')
+        if not start <= day <= end:
+            raise InputError('OUT_OF_PERIOD', field)
+    def flag_value(v, field):
         if v not in ('yes','no','unknown'):
-            raise ValueError('invalid flag')
-    for n,r in enumerate(budgets,2):
+            raise InputError('INVALID_FLAG', field)
+    for index,r in enumerate(budgets,2):
+        n = getattr(r, 'line', index)
         try:
-            key=(token(r['project']),token(r['category']))
-            a,b=iso(r['start']),iso(r['end'])
-            common(r,a); common(r,b)
-            if a>b: raise ValueError('invalid dates')
-            budget_defs[key].append((a,b,money(r['approved']),n))
-        except (ValueError,TypeError,KeyError,InvalidOperation): invalid('budgets',n,None)
+            key=(token(r['project'],'project'),token(r['category'],'category'))
+            a,b=iso(r['start'],'start'),iso(r['end'],'end')
+            common(r,a,'start'); common(r,b,'end')
+            if a>b: raise InputError('INVALID_BUDGET_DATES')
+            budget_defs[key].append((a,b,money(r['approved'],'approved'),n))
+        except (ValueError,TypeError,KeyError,InvalidOperation) as exc: invalid('budgets',n,exc)
     overlaps=set()
     for key, defs in budget_defs.items():
         # Reject ambiguous matching periods rather than double-count.
@@ -123,17 +167,20 @@ def review(expenses, payroll, budgets, policy):
     ids=Counter(r.get('id') for r in expenses)
     payroll_ids=Counter(r.get('id') for r in payroll)
     invoice_groups=defaultdict(list)
+    amount_groups=defaultdict(list)
     payroll_groups=defaultdict(list)
-    for n,r in enumerate(expenses,2):
+    for index,r in enumerate(expenses,2):
+        n = getattr(r, 'line', index)
         try:
-            token(r['id']); key=(token(r['project']),token(r['category']))
-            vendor=token(r['vendor']); invoice=token(r['invoice'])
-            day=iso(r['date']); common(r,day)
-            gross,paid=money(r['gross']),money(r['paid'])
-            flag_value(r['document']); flag_value(r['approval'])
-            if ids[r['id']]>1: raise ValueError('duplicate row id')
+            token(r['id'],'id'); key=(token(r['project'],'project'),token(r['category'],'category'))
+            vendor=token(r['vendor'],'vendor'); invoice=token(r['invoice'],'invoice')
+            day=iso(r['date'],'date'); common(r,day,'date')
+            gross,paid=money(r['gross'],'gross'),money(r['paid'],'paid')
+            flag_value(r['document'],'document'); flag_value(r['approval'],'approval')
+            if ids[r['id']]>1: raise InputError('DUPLICATE_ID','id')
             eligible_expenses.append((n,paid))
             invoice_groups[(vendor,invoice)].append(n)
+            amount_groups[(vendor,paid,day)].append((n,invoice))
             if abs(gross-paid)>tol:
                 add('expenses',n,'EXP_PAYMENT_DIFF','REVIEW','Gross versus paid differs; verify retention, installments or credits.',gross,paid)
             if policy['require_document'] and r['document']!='yes':
@@ -146,29 +193,34 @@ def review(expenses, payroll, budgets, policy):
             else:
                 spend[matched[0][3]]+=paid
             results.append({'module':'expenses','row':n,'processed':True})
-        except (ValueError,TypeError,KeyError,InvalidOperation):
-            invalid('expenses',n,None); excluded_expense_rows.append(n); results.append({'module':'expenses','row':n,'processed':False})
+        except (ValueError,TypeError,KeyError,InvalidOperation) as exc:
+            invalid('expenses',n,exc); excluded_expense_rows.append(n); results.append({'module':'expenses','row':n,'processed':False})
     for group in invoice_groups.values():
         if len(group)>1:
             for n in group: add('expenses',n,'EXP_POSSIBLE_DUPLICATE','REVIEW','Repeated vendor/invoice reference; verify installments, splits or duplicate payment.')
+    for group in amount_groups.values():
+        if len({invoice for _, invoice in group}) > 1:
+            for n, invoice in group:
+                add('expenses',n,'EXP_POSSIBLE_DUPLICATE_AMOUNT','REVIEW','Same vendor, payment amount and date with different invoice references; verify installments, splits or duplicate payment.')
     payroll_paid=[]
-    for n,r in enumerate(payroll,2):
+    for index,r in enumerate(payroll,2):
+        n = getattr(r, 'line', index)
         try:
-            token(r['id']); emp=token(r['employee']); day=month(r['period']); common(r,day)
+            token(r['id'],'id'); emp=token(r['employee'],'employee'); day=month(r['period'],'period'); common(r,day,'period')
             # Entire competence must be covered by policy.
-            import calendar
-            if date(day.year,day.month,calendar.monthrange(day.year,day.month)[1])>end: raise ValueError('partial competence')
-            gross,deductions,net,paid=(money(r[k]) for k in ('gross','deductions','net','paid'))
-            flag_value(r['approval'])
-            if payroll_ids[r['id']]>1 or deductions>gross: raise ValueError('invalid payroll')
+            if date(day.year,day.month,calendar.monthrange(day.year,day.month)[1])>end: raise InputError('PARTIAL_COMPETENCE','period')
+            gross,deductions,net,paid=(money(r[k],k) for k in ('gross','deductions','net','paid'))
+            flag_value(r['approval'],'approval')
+            if payroll_ids[r['id']]>1: raise InputError('DUPLICATE_ID','id')
+            if deductions>gross: raise InputError('INVALID_PAYROLL','deductions')
             payroll_paid.append(paid); payroll_groups[(emp,r['period'])].append(n)
             expected=gross-deductions
             if abs(expected-net)>tol: add('payroll',n,'PAY_NET_DIFF','REVIEW','Reported net differs from gross less reported deductions; not a statutory calculation.',expected,net)
             if abs(net-paid)>tol: add('payroll',n,'PAY_PAID_DIFF','REVIEW','Reported net versus paid differs; reconcile payment.',net,paid)
             if policy['require_approval'] and r['approval']!='yes': add('payroll',n,'PAY_APPROVAL','REVIEW','Approval not confirmed.')
             results.append({'module':'payroll','row':n,'processed':True})
-        except (ValueError,TypeError,KeyError,InvalidOperation):
-            invalid('payroll',n,None); results.append({'module':'payroll','row':n,'processed':False})
+        except (ValueError,TypeError,KeyError,InvalidOperation) as exc:
+            invalid('payroll',n,exc); results.append({'module':'payroll','row':n,'processed':False})
     for group in payroll_groups.values():
         if len(group)>1:
             for n in group: add('payroll',n,'PAY_REPEAT','REVIEW','Repeated employee/competence; verify separate payroll runs or duplicate payments.')
@@ -202,10 +254,18 @@ def main(argv=None):
     try:
         p=policy_load(args.policy)
         data={k:read_csv(getattr(args,k),k) if getattr(args,k) else [] for k in FIELDS}
-        with localcontext() as ctx:
-            ctx.prec=40
-            result=review(**data,policy=p)
-        with open(args.out,'x',encoding='utf-8') as f: json.dump(result,f,ensure_ascii=False,indent=2); f.write('\n')
+        result=review(**data,policy=p)
+        destination = Path(args.out)
+        temporary = destination.parent / ('.brfc-' + uuid4().hex + '.tmp')
+        created = False
+        try:
+            with temporary.open('x',encoding='utf-8') as f:
+                created = True
+                json.dump(result,f,ensure_ascii=False,indent=2); f.write('\n')
+            os.link(temporary, destination)
+        finally:
+            if created:
+                os.unlink(temporary)
         print('Report generated locally. Review findings and coverage.')
         return 2 if result['findings_by_severity'].get('BLOCKER') else (1 if result['findings'] else 0)
     except (OSError,ValueError,TypeError,KeyError,InvalidOperation,csv.Error):

@@ -109,8 +109,6 @@ class EdgeCaseTests(unittest.TestCase):
             self.assertTrue(any((f['code'], f['severity'], f['row']) ==
                                 ('INPUT_INVALID', 'BLOCKER', 2) for f in result['findings']))
 
-    # T-004: findings currently count logical records rather than physical CSV lines.
-    @unittest.expectedFailure
     def test_csv_finding_uses_physical_line_after_multiline_record(self):
         header = 'id,date,project,category,vendor,invoice,gross,paid,currency,document,approval\n'
         first = 'E,2026-06-01,"P\nQ",C,V,I,10,10,BRL,yes,yes\n'
