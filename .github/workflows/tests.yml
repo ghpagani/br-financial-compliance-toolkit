@@ -4,16 +4,25 @@ permissions:
   contents: read
 jobs:
   tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python: ['3.10', '3.12']
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - run: python -m unittest discover -s tests -v
+      - run: python scripts/validate_plugin.py
+      - run: |
+          python scripts/build_release.py --out-dir dist/ci-one
+          python scripts/build_release.py --out-dir dist/ci-two
+          python -c "import hashlib, pathlib; a=pathlib.Path('dist/ci-one'); b=pathlib.Path('dist/ci-two'); x=sorted(p.name for p in a.glob('*.zip')); y=sorted(p.name for p in b.glob('*.zip')); assert len(x)==2 and x==y and all(hashlib.sha256((a/n).read_bytes()).digest()==hashlib.sha256((b/n).read_bytes()).digest() for n in x)"
       - run: |
           set +e
           python plugins/br-financial-compliance/skills/br-financial-compliance/scripts/review.py --policy plugins/br-financial-compliance/skills/br-financial-compliance/examples/policy.json --expenses plugins/br-financial-compliance/skills/br-financial-compliance/examples/expenses.csv --payroll plugins/br-financial-compliance/skills/br-financial-compliance/examples/payroll.csv --budgets plugins/br-financial-compliance/skills/br-financial-compliance/examples/budgets.csv --out demo-report.json
