@@ -25,7 +25,7 @@ Legenda de status: `A fazer` · `Delegada` · `Em revisão` · `Aceita` · `Bloq
 | T-005 | Memória de cálculo estruturada | Codex | T-004 | Aceita (d7da3d3) |
 | T-006 | Relatórios PT/EN e saída Markdown | Codex | T-005 | Aceita com correções (T-006b); merge 51a6a87 |
 | T-006b | Correções do Markdown/i18n apontadas na revisão da T-006 | Codex | T-006 | Delegada |
-| T-008 | Documentação, licenças, atribuições, versão 0.1.1, CHANGELOG | Claude | T-002, T-006 | A fazer |
+| T-008 | Documentação, licenças, atribuições, versão 0.1.1, CHANGELOG | Claude | T-002, T-006 | Parcial: docs reescritos; faltam bump de versão, reverificar SECURITY após T-006b e versão PT do contrato de dados |
 | T-009 | Governança: RULE-REGISTRY e esquema de regra (sem regra legal) | Claude | — | Em andamento |
 | T-010 | Leitura integral dos ADRs/Flyway da RTC; verificar links e vigência (requer rede) | Claude | — | Concluída (ressalva: 2 links do Planalto não verificáveis) |
 
@@ -119,7 +119,7 @@ Ordem de execução do Codex: **T-001 → T-007 → T-003 → T-002 → T-004 �
 ## T-006b — Correções da revisão da T-006
 
 Origem: sondagem independente do escape de Markdown (VALIDATION-REPORT, T-006). Escopo: `review.py` e `tests/test_localization.py` (ou novo `tests/test_markdown_escape.py`); `references/data-contract.md`/`docs/DATA-CONTRACT.md` só se o comportamento documentado mudar.
-1. **Texto livre do usuário** (`policy.source`; hoje o único) recebe escape **estrito**: além do atual, `:` `/` `@` `.` `*` `_` `~` `#` `>` `!` `-` `+` `=` `{` `}` como entidades numéricas, de modo que URL com esquema, `www.`, e-mail, ênfase e blocos não sejam interpretados. Números e rótulos do próprio motor continuam com o escape atual (ficam legíveis).
+1. **Texto livre do usuário** (`policy.source`; hoje o único) recebe escape **estrito**: além do atual, `:` `/` `@` `.` `*` `_` `~` `#` `>` `!` `-` `+` `=` `{` `}` como entidades (nomeadas, como `&gt;`, ou numéricas — o critério é que nenhum caractere especial interpretável sobre), de modo que URL com esquema, `www.`, e-mail, ênfase e blocos não sejam interpretados. Números e rótulos do próprio motor continuam com o escape atual (ficam legíveis).
 2. **Caracteres de formatação/controle Unicode** (categoria `Cf` e `Cc`, inclusive bidi `U+202A–202E`, `U+2066–2069` e zero-width `U+200B–200F`) removidos ou substituídos por espaço no texto livre.
 3. Testes: um por caso (URL com esquema, `www.`, e-mail, `*ênfase*`/`_ênfase_`/`~~`, imagem `![x](http://…)`, rodapé de referência `[ref]: http://…`, bidi/zero-width, entidade literal) verificando que nenhum autolink/ênfase/controle sobra no texto da linha `Fonte` e que o número de linhas do documento não muda (sem injeção de bloco). Manter os testes atuais.
 4. `scope` em pt-BR deve ser fiel ao inglês, que diz "No statutory, **fraud** or audit opinion": a versão em português deve também afastar parecer sobre fraude (ex.: "Sem parecer legal, sobre fraude ou de auditoria."), sem afirmar nada sobre fraude.

@@ -152,3 +152,16 @@ Escopo (`git diff --stat`): `review.py` (+143/−28 aprox.), `tests/test_localiz
 Severidade: baixa a média — `policy.source` é fornecido pelo operador, mas o relatório pode ser compartilhado e renderizado. Correção na **T-006b**.
 Outras ressalvas: (a) o teste hostil do Codex não cobre URL solta, e-mail nem bidi, e a fonte hostil entra numa linha de lista, não numa tabela; (b) `scope` em pt-BR omite "fraude" que o inglês menciona ("No statutory, fraud or audit opinion"); (c) `--out` ainda diz "New JSON output"; (d) em inglês os rótulos de cobertura/totais do Markdown usam a chave crua; (e) Python 3.10 e CI hospedado não exercitados.
 
+### T-008 (parcial) — documentação, licenças e verificação de Python 3.10 · Claude
+Arquivos reescritos: `README.md`, `README.pt-BR.md` (paridade EN/PT), `docs/INSTALL.md` (bilíngue; a seção "GitHub" antiga mandava criar o repositório e fazer `git init` — obsoleta e substituída por procedimento de publicação **sujeito a autorização humana**), `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `ROADMAP.md` (bilíngues).
+
+| Verificação | Resultado |
+|---|---|
+| `discover -s tests` (inclui `test_references`, que varre os `.md` versionados atrás de caminhos de exemplos inexistentes) e `validate_plugin.py` | 48 testes OK; saída 0 |
+| Licenças: `LICENSE` da raiz, do plugin e da skill | as três idênticas (MIT, "BR Financial Compliance Toolkit contributors", 2026) |
+| Atribuição da RTC (MIT, Receita Federal) | registrada em `docs/SOURCES.md` e `references/sources.md`; o código do toolkit é Python independente e nenhum código ou tabela da RTC foi copiado (verificado na leitura de T-010); **verificação de consistência, não parecer jurídico sobre licenças** |
+| **Python 3.10 (estático)**: `ast.parse(..., feature_version=(3,10))` nos 12 arquivos `.py` versionados + busca de APIs posteriores (`tomllib`, `datetime.UTC`, `StrEnum`, `ExceptionGroup`, `except*`, `Self`, `itertools.batched`, `Path.walk`, …) | nenhum arquivo inválido na gramática 3.10; nenhuma API posterior encontrada. **Os testes NÃO foram executados no Python 3.10** (só o 3.12 está instalado; instalar outro interpretador exigiria alterar a máquina) |
+
+Correção de rumo registrada: uma primeira versão do `SECURITY.md` afirmava que o Markdown neutraliza links, ênfase e caracteres de controle; a sondagem da T-006 mostrou que isso **não** era verdade e o texto foi reescrito para o estado real (HTML, sintaxe de link e separadores de tabela escapados; URL solta, e-mail, ênfase e controle Unicode ainda não). Atualizar após aceitar a T-006b.
+Pendências da T-008: bump de versão para 0.1.1 em `review.py` e nos dois `plugin.json` (após a T-006b, para não conflitar), reverificar a afirmação do `SECURITY.md`, versão em português de `docs/DATA-CONTRACT.md`, e `docs/SOURCES.md` em PT.
+

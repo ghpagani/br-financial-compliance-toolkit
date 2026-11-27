@@ -1,16 +1,18 @@
 # BR Financial Compliance Toolkit
 
-[Português (Brasil)](README.pt-BR.md) | [MIT License](LICENSE) | [Security](SECURITY.md)
+[Português (Brasil)](README.pt-BR.md) | [MIT License](LICENSE) | [Security](SECURITY.md) | [Changelog](CHANGELOG.md)
 
 An independent, local-first toolkit for financial review, internal controls and project accountability in Brazil. Inspired by the public architecture of the Brazilian Federal Revenue tax calculator; **not affiliated with the Receita Federal or any government agency**. No official certification or legal/accounting opinion.
 
-## v0.1.0 — implemented scope
+## v0.1.1 (in development, not released) — implemented scope
 
-- Expense review: payment discrepancies, supporting-document and approval flags, repeated vendor/invoice references.
+- Expense review: payment discrepancies, supporting-document and approval flags, repeated vendor/invoice references and possible duplicates by vendor, amount and date.
 - Payroll reconciliation: gross minus reported deductions versus reported net, net versus paid, repeated employee/competence and approval flags. No statutory calculation.
 - Budget execution: cash-paid expenses matched to project/category and date windows, overspend and unmatched records; payroll not included in budget totals.
-- Versioned user-provided policy, exact decimal money, per-row findings, coverage and explicit exclusions.
-- Local Python CLI; no network calls or third-party dependencies. English report messages. Agent Skill can explain results in Portuguese.
+- Versioned user-provided policy, exact decimal money (no rounding is applied; input is limited to two decimal places), per-row findings with the physical file line, coverage and explicit exclusions.
+- Traceability: every rejected row carries a fixed `reason` and the `field`; discrepancy findings carry a structured, recomputable `calculation` (formula, operands, tolerance).
+- Local Python CLI; no network calls or third-party dependencies. Reports in English or Brazilian Portuguese (`--lang en|pt-BR`), as JSON or deterministic Markdown (`--format json|md`). Machine fields such as `code` are never translated.
+- Reproducible distribution: validation of the plugin structure and byte-reproducible ZIPs with checksums (see below).
 
 ## Quick start
 
@@ -22,6 +24,24 @@ python -m unittest discover -s tests -v
 ```
 
 Exit codes: 0 no configured finding; 1 review findings; 2 invalid/ambiguous rows (blockers); 3 input/output failure. The sample intentionally returns 1. Output cannot overwrite an existing file. See [data contract](docs/DATA-CONTRACT.md). Store real inputs and reports outside the repository, under organization-approved access controls. Do not commit reports or personal data.
+
+Report options: `--lang en|pt-BR` (default `en`) and `--format json|md` (default `json`). Row numbers are the physical line where each CSV record starts. The report file is written through a temporary file in the same directory and published without overwriting, which requires a **local volume that supports hard links** (for example NTFS, ext4 or APFS). On volumes without that support (FAT/exFAT, many network shares and cloud-drive mounts) the run fails with exit code 3 and writes nothing; choose another output folder. Invalid command-line options are rejected by the argument parser with exit code 2, which is not the "blocker" code of the review engine.
+
+## Validate and build the distribution
+
+```bash
+python scripts/validate_plugin.py
+python scripts/build_release.py --out-dir dist
+```
+
+The build reads only Git-tracked plugin files, normalizes line endings, fixes timestamps and permissions, writes two ZIPs (skill and plugin) and `SHA256SUMS`, and refuses to overwrite existing output. Two builds on the same machine produce identical hashes; archives built with a different zlib version may differ in bytes even when the content is identical. Building a ZIP does not publish a release: releases need explicit human authorization.
+
+## Verification status
+
+- Test suite: `python -m unittest discover -s tests -v` (synthetic data only). Run locally on Windows with Python 3.12.
+- Python 3.10 is the declared minimum. It has been checked statically (all project files parse with the 3.10 grammar and no later standard-library APIs were found), not by running the tests on 3.10.
+- The GitHub Actions workflow (Ubuntu and Windows, Python 3.10 and 3.12) is configured but has not been run for this version. Do not read it as a passing result.
+- Plugin marketplace manifests are experimental until installed in a real host.
 
 ## Agent Skill
 
