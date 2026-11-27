@@ -91,7 +91,7 @@ Escopo (`git diff --stat`): `review.py` (+166/−63 linhas aprox.), `tests/test_
 
 Diferencial: o que foi descontado da comparação (aditivo por desenho): chaves `reason`/`field` nos achados `INPUT_INVALID`, achados `EXP_POSSIBLE_DUPLICATE_AMOUNT` e o status das linhas sinalizadas só por ela. Todo o resto (achados, severidades, totais, cobertura, orçamentos, limitações) foi comparado integralmente.
 
-**Reasons observados** nas execuções: CURRENCY, DUPLICATE_ID, INVALID_AMOUNT, INVALID_BUDGET_DATES, INVALID_DATE, INVALID_FLAG, INVALID_PAYROLL, INVALID_REFERENCE, MALFORMED_ROW, OUT_OF_PERIOD. `PARTIAL_COMPETENCE` só é coberto por teste unitário (exige vigência terminando no meio do mês). `HEADER` existe no conjunto fechado mas é **inalcançável** (cabeçalho inválido aborta com saída 3).
+**Reasons observados** nas execuções: CURRENCY, DUPLICATE_ID, INVALID_AMOUNT, INVALID_BUDGET_DATES, INVALID_DATE, INVALID_FLAG, INVALID_PAYROLL, INVALID_REFERENCE, MALFORMED_ROW, OUT_OF_PERIOD. `PARTIAL_COMPETENCE` só é coberto por teste unitário (exige vigência terminando no meio do mês). `HEADER` existia no conjunto fechado mas era **inalcançável** (cabeçalho inválido aborta com saída 3); removido na T-005.
 
 **Mudança de comportamento (registrada no CHANGELOG):** `row` passa a ser a linha física de início do registro; idêntico ao anterior em CSV sem campo multilinha (provado pelo diferencial de `read_csv`).
 
@@ -100,3 +100,19 @@ Diferencial: o que foi descontado da comparação (aditivo por desenho): chaves 
 2. Se `os.unlink` do temporário falhasse *depois* do `os.link` bem-sucedido, o relatório existiria com saída 3 e um `.brfc-*.tmp` restante. Improvável; não reproduzido.
 3. `EXP_POSSIBLE_DUPLICATE_AMOUNT`: num grupo com notas {A, A, B} todas as 3 linhas são sinalizadas, inclusive o par A-A que já tem `EXP_POSSIBLE_DUPLICATE` (ruído, não erro).
 4. Python 3.10 não exercitado localmente; CI hospedado não executado.
+
+### T-005 — memória de cálculo estruturada · `39d38f3` (integrada em `d7da3d3`)
+Escopo (`git diff --stat`): `review.py` (+26/−7), `tests/test_calculation.py` (novo, 78), `docs/DATA-CONTRACT.md`, `docs/RULE-REGISTRY.md`, `references/data-contract.md`, CHANGELOG. Nada fora do permitido. Diff de `review.py` lido integralmente.
+
+| Verificação (árvore do Claude, pós-merge) | Resultado |
+|---|---|
+| `discover -s tests` (normal e `TEMP`/`TMP` inexistentes); `validate_plugin.py` | 43 testes OK; saída 0 |
+| **Verificação independente da aritmética** (script próprio, semente fixa): identidade de `money()`/`quantize` em 20000 valores | OK |
+| Soma de 100000 valores (até 99999999999999.99) em `Decimal` × soma exata em `Fraction` | idênticas (total 5686779699212227365.39) |
+| `99999999999999.99 + 0.01` | `100000000000000.00`, exato |
+| Recomputação de `calculation` em 4000 cenários: 7330 `EXP_PAYMENT_DIFF`, 4757 `PAY_NET_DIFF`, 4144 `PAY_PAID_DIFF`, 2524 `BUDGET_OVER` | 0 divergências em `difference` e na regra de comparação; nenhum texto de entrada em `calculation`; `calculation` só nos achados com valores |
+| Diferencial motor antigo × novo (12000 entradas, 2 modos) + 3000 CSVs, descontando `reason`/`field`/regra nova/`calculation`/chaves da raiz | 0 divergências |
+| Demo: antigo × atual (recursivo) | só adições: `$.rounding_policy`, `$.decimal_context`, `$.findings[0,6,7,9].calculation`; nenhuma remoção ou valor alterado |
+
+A afirmação "nenhum arredondamento; entrada com até 2 casas; aritmética Decimal exata" foi **verificada**, não presumida: vale enquanto as somas couberem na precisão 40 (máx. 14 dígitos inteiros × 100000 linhas ≈ 20 dígitos).
+**Imprecisão aceita e a corrigir na T-006:** o `comparison` de `BUDGET_OVER` diz `actual > expected + tolerance`, nomes que não são operandos daquele cálculo (`approved`, `matched_paid`). Não afeta valores nem decisão.

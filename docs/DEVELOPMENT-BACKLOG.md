@@ -22,7 +22,7 @@ Legenda de status: `A fazer` · `Delegada` · `Em revisão` · `Aceita` · `Bloq
 | T-003 | Exemplos e política dentro do plugin; corrigir referências | Codex | T-001 | Aceita (b10b3ce) |
 | T-002 | ZIP reproduzível + validação de estrutura do plugin + CI | Codex | T-003 | Aceita (fc545f1) |
 | T-004 | Endurecimento do motor: motivos de rejeição, quase-duplicidade, gravação atômica | Codex | T-001, T-007 | Aceita (7fd5aa7) |
-| T-005 | Memória de cálculo estruturada | Codex | T-004 | Delegada |
+| T-005 | Memória de cálculo estruturada | Codex | T-004 | Aceita (d7da3d3) |
 | T-006 | Relatórios PT/EN e saída Markdown | Codex | T-005 | A fazer |
 | T-008 | Documentação, licenças, atribuições, versão 0.1.1, CHANGELOG | Claude | T-002, T-006 | A fazer |
 | T-009 | Governança: RULE-REGISTRY e esquema de regra (sem regra legal) | Claude | — | Em andamento |
@@ -91,7 +91,7 @@ Ordem de execução do Codex: **T-001 → T-007 → T-003 → T-002 → T-004 �
 - **Objetivo:** rastreabilidade das rejeições, melhor detecção e gravação segura (M-04, M-05, M-06, B-10…B-12).
 - **Arquivos:** somente `review.py` e testes novos/ajustados; docs da skill que descrevam os campos novos (`references/data-contract.md`, `references/controls.md`).
 - **Mudanças (todas aditivas):**
-  1. **Motivo da rejeição:** `INPUT_INVALID` ganha campo `reason` com valor de um conjunto fechado (literais fixos, **nunca** texto da entrada): `HEADER`, `MALFORMED_ROW`, `DUPLICATE_ID`, `CURRENCY`, `OUT_OF_PERIOD`, `PARTIAL_COMPETENCE`, `INVALID_DATE`, `INVALID_AMOUNT`, `INVALID_REFERENCE`, `INVALID_FLAG`, `INVALID_PAYROLL`, `INVALID_BUDGET_DATES`. Também o campo `field` quando aplicável (nome da coluna do contrato).
+  1. **Motivo da rejeição:** `INPUT_INVALID` ganha campo `reason` com valor de um conjunto fechado (literais fixos, **nunca** texto da entrada): `HEADER`, `MALFORMED_ROW`, `DUPLICATE_ID`, `CURRENCY`, `OUT_OF_PERIOD`, `PARTIAL_COMPETENCE`, `INVALID_DATE`, `INVALID_AMOUNT`, `INVALID_REFERENCE`, `INVALID_FLAG`, `INVALID_PAYROLL`, `INVALID_BUDGET_DATES` (o conjunto original previa também `HEADER`, removido na T-005 por ser inalcançável). Também o campo `field` quando aplicável (nome da coluna do contrato).
   2. **Quase-duplicidade:** nova regra `EXP_POSSIBLE_DUPLICATE_AMOUNT` (REVIEW): mesmo `vendor` + `paid` + `date`, `invoice` diferente. Não deve duplicar o achado quando já há `EXP_POSSIBLE_DUPLICATE` para o mesmo par de linhas. Registrar em `docs/RULE-REGISTRY.md`.
   3. **Gravação segura:** escrever em arquivo temporário no mesmo diretório e publicar sem sobrescrever (`os.link` + remoção do temporário, ou equivalente que falhe se o destino existir e funcione no Windows); em qualquer falha, **nenhum** arquivo parcial permanece. Manter código de saída 3 e a mensagem.
   4. **Número de linha** físico via `reader.line_num` (B-10); mover `import calendar` ao topo (B-11); aplicar `localcontext(prec=40)` dentro de `review()` (B-12).
@@ -113,6 +113,7 @@ Ordem de execução do Codex: **T-001 → T-007 → T-003 → T-002 → T-004 �
 - **Mudança:** `--lang {en,pt-BR}` (padrão `en`, preserva compatibilidade) e `--format {json,md}` (padrão `json`). Catálogo `código → mensagem` por idioma; **o campo `code` e demais campos de máquina nunca são traduzidos**; JSON passa a incluir `language`. Markdown determinístico, com cobertura, achados por linha, limitações e a frase "decisão do revisor pendente". Mesma regra de não sobrescrever.
 - **Critérios de aceitação:** teste garante que todo `code` emitido tem mensagem nos dois idiomas (varrendo as constantes do motor); JSON `--lang en` idêntico ao atual salvo campos novos; MD gerado duas vezes é idêntico byte a byte; saída do Markdown não contém valores de entrada além dos já presentes no JSON.
 - **Riscos:** tradução de termos contábeis: usar linguagem neutra, sem afirmar fraude ou irregularidade comprovada.
+- **Refinamento (decisões de design, 2026-11-27):** (1) tudo dentro de `review.py` — **sem módulo irmão**: os testes carregam o motor por `importlib` a partir do caminho do arquivo, e um `import messages` quebraria; (2) catálogo único `MESSAGES = {'en': {...}, 'pt-BR': {...}}`, com `en` idêntico, caractere a caractere, às mensagens atuais (compatibilidade); (3) texto humano localizado: mensagem dos achados, `scope`, `limitations`, `rounding_policy`, `calculation.rounding`, `basis` de orçamento; campos de máquina nunca traduzidos (`code`, `severity`, `module`, `status`, `formula`, `comparison`, nomes de operandos); (4) Markdown: o texto livre vindo do usuário (`policy.source`) **deve ser escapado** (pipes, quebras de linha, crases, `<`, colchetes/links) — risco de injeção de Markdown; (5) corrigir o texto de `comparison` de `BUDGET_OVER` para usar nomes dos operandos (`matched_paid > approved + tolerance`) — herança da T-005; (6) teste de consistência catálogo × `docs/RULE-REGISTRY.md`: o conjunto de códigos do catálogo deve coincidir com os códigos da tabela de regras vigentes.
 
 ## T-008 — Documentação, licenças e versão (Claude)
 
