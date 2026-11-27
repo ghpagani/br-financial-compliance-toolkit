@@ -15,7 +15,7 @@ class CliTests(unittest.TestCase):
         expense_path.write_text(
             'id,date,project,category,vendor,invoice,gross,paid,currency,document,approval\n'
             + expense + '\n', encoding='utf-8')
-        args = ['--policy', str(ROOT / 'examples/policy.json'),
+        args = ['--policy', str(ROOT / 'plugins/br-financial-compliance/skills/br-financial-compliance/examples/policy.json'),
                 '--expenses', str(expense_path), '--out', str(root / output)]
         if budget:
             budget_path = root / 'budgets.csv'

@@ -16,7 +16,7 @@ jobs:
       - run: python -m unittest discover -s tests -v
       - run: |
           set +e
-          python plugins/br-financial-compliance/skills/br-financial-compliance/scripts/review.py --policy examples/policy.json --expenses examples/expenses.csv --payroll examples/payroll.csv --budgets examples/budgets.csv --out demo-report.json
+          python plugins/br-financial-compliance/skills/br-financial-compliance/scripts/review.py --policy plugins/br-financial-compliance/skills/br-financial-compliance/examples/policy.json --expenses plugins/br-financial-compliance/skills/br-financial-compliance/examples/expenses.csv --payroll plugins/br-financial-compliance/skills/br-financial-compliance/examples/payroll.csv --budgets plugins/br-financial-compliance/skills/br-financial-compliance/examples/budgets.csv --out demo-report.json
           code=$?
           set -e
           test "$code" -eq 1

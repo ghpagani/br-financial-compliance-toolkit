@@ -8,10 +8,10 @@ from test_review import ROOT, m
 
 class EdgeCaseTests(unittest.TestCase):
     def setUp(self):
-        self.policy = m.policy_load(ROOT / 'examples/policy.json')
-        self.expense = m.read_csv(ROOT / 'examples/expenses.csv', 'expenses')[0]
-        self.payroll = m.read_csv(ROOT / 'examples/payroll.csv', 'payroll')[0]
-        self.budget = m.read_csv(ROOT / 'examples/budgets.csv', 'budgets')[0]
+        self.policy = m.policy_load(ROOT / 'plugins/br-financial-compliance/skills/br-financial-compliance/examples/policy.json')
+        self.expense = m.read_csv(ROOT / 'plugins/br-financial-compliance/skills/br-financial-compliance/examples/expenses.csv', 'expenses')[0]
+        self.payroll = m.read_csv(ROOT / 'plugins/br-financial-compliance/skills/br-financial-compliance/examples/payroll.csv', 'payroll')[0]
+        self.budget = m.read_csv(ROOT / 'plugins/br-financial-compliance/skills/br-financial-compliance/examples/budgets.csv', 'budgets')[0]
 
     def test_money_boundaries(self):
         for value, expected in [('0', '0.00'), ('0.00', '0.00'),

@@ -18,10 +18,10 @@ class ReviewTests(unittest.TestCase):
         self.assertFalse(path.exists())
 
     def setUp(self):
-        self.p=m.policy_load(ROOT/'examples/policy.json')
-        self.e=m.read_csv(ROOT/'examples/expenses.csv','expenses')
-        self.y=m.read_csv(ROOT/'examples/payroll.csv','payroll')
-        self.b=m.read_csv(ROOT/'examples/budgets.csv','budgets')
+        self.p=m.policy_load(ROOT/'plugins/br-financial-compliance/skills/br-financial-compliance/examples/policy.json')
+        self.e=m.read_csv(ROOT/'plugins/br-financial-compliance/skills/br-financial-compliance/examples/expenses.csv','expenses')
+        self.y=m.read_csv(ROOT/'plugins/br-financial-compliance/skills/br-financial-compliance/examples/payroll.csv','payroll')
+        self.b=m.read_csv(ROOT/'plugins/br-financial-compliance/skills/br-financial-compliance/examples/budgets.csv','budgets')
     def run_review(self): return m.review(self.e,self.y,self.b,self.p)
     def codes(self): return [f['code'] for f in self.run_review()['findings']]
     def test_decimal(self): self.assertEqual(str(m.money('0.1')+m.money('0.2')),'0.30')
@@ -57,7 +57,7 @@ class ReviewTests(unittest.TestCase):
             with self.assertRaises(ValueError): m.policy_load(p)
     def test_no_overwrite(self):
         with temporary_directory() as d:
-            p=Path(d)/'out.json'; p.write_text('original'); args=['--policy',str(ROOT/'examples/policy.json'),'--expenses',str(ROOT/'examples/expenses.csv'),'--out',str(p)]; self.assertEqual(m.main(args),3); self.assertEqual(p.read_text(),'original')
+            p=Path(d)/'out.json'; p.write_text('original'); args=['--policy',str(ROOT/'plugins/br-financial-compliance/skills/br-financial-compliance/examples/policy.json'),'--expenses',str(ROOT/'plugins/br-financial-compliance/skills/br-financial-compliance/examples/expenses.csv'),'--out',str(p)]; self.assertEqual(m.main(args),3); self.assertEqual(p.read_text(),'original')
     def test_clean_row(self):
         self.e=[self.e[-1]];self.y=[self.y[0]];r=self.run_review();self.assertFalse(r['findings']);self.assertTrue(all(x['status']=='NO_CONFIGURED_FINDING' for x in r['rows']))
 
