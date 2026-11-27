@@ -57,3 +57,20 @@ Escopo (`git diff -M --stat`): 4 renames 100% `examples/` → `plugins/.../skill
 | Comando de demonstração copiado do README, executado da raiz | saída 1; totais `2850.00` / `9000.00` / `2650.00` |
 
 Ressalvas: o comando de demonstração ficou longo (caminho completo do plugin); o `.gitignore` agora tem exceção específica ao caminho novo (um CSV novo em outro lugar continua ignorado, como desejado). `python -m unittest tests.test_references` (módulo a partir da raiz) falha por import, igual à ressalva da T-001; o comando oficial é `discover -s tests`.
+
+### T-002 — build reprodutível e validação do plugin · `603a667` (integrada em `fc545f1`)
+Escopo (`git diff --stat`): `scripts/build_release.py` (84 linhas), `scripts/validate_plugin.py` (86), `tests/test_packaging.py` (76), `.github/workflows/tests.yml`, `.gitignore` (`dist/`). Nenhum arquivo fora do previsto; motor, testes anteriores e exemplos intocados. Só biblioteca padrão.
+
+| Verificação (árvore do Claude, pós-merge) | Resultado |
+|---|---|
+| `python -m unittest discover -s tests` (normal e `TEMP`/`TMP` inexistentes) | 31 testes: 30 OK + 1 `expectedFailure` (T-004) |
+| `python scripts/validate_plugin.py` | saída 0 |
+| Build duplo em `dist/a` e `dist/b` | `SHA256SUMS` idênticos; skill `cdd1d4a7…db602`, plugin `0045a693…681e2` |
+| Hashes do Claude vs. hashes informados pelo Codex (outra worktree) | idênticos |
+| Segundo build no mesmo destino | falha (`Output already exists`), saída 1, nada alterado |
+| Conteúdo dos ZIPs | skill 11 arquivos, plugin 14; datas fixas 2026-01-01, permissões 0644; sem CRLF; sem `__pycache__`/`.pyc`/`demo-report`/`reports`; skill com `examples/` |
+| ZIP da skill extraído, demo executada com os exemplos extraídos | saída 1; totais `2850.00` / `9000.00` / `2650.00` |
+| `git status`, `dist/` removido | limpo |
+
+**Não verificado:** o CI hospedado (matriz Ubuntu/Windows × Python 3.10/3.12) — o workflow foi escrito, não executado; não há alegação de aprovação. Python 3.10 não foi exercitado localmente (só 3.12).
+**Limites conhecidos:** (1) a igualdade de hash comprova reprodutibilidade na mesma versão de zlib; ZIPs gerados em máquinas com zlib diferente podem divergir nos bytes comprimidos mesmo com conteúdo idêntico — o CI só compara dois builds no mesmo runner; (2) o build lê a árvore de trabalho dos arquivos versionados, então alterações locais não commitadas entram no ZIP; (3) `validate_plugin.py` só checa referências entre crases em `SKILL.md` e `references/*.md`.
