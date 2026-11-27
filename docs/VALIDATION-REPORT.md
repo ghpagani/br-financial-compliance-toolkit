@@ -29,3 +29,18 @@ Escopo conferido por `git diff --stat`: `.gitignore`, `tests/support.py`, `tests
 | CLI da demo (`examples/`) | saída 1; totais `2850.00` / `9000.00` / `2650.00` |
 
 Ressalvas: (a) a falha de permissão original não foi reproduzida pelo Codex; (b) o helper é importado como `from support import ...`, o que funciona com `discover -s tests` (comando do CI e do projeto) mas não com `python -m unittest tests.test_review` a partir da raiz; (c) execução no sandbox do Codex com a falha original continua não comprovada.
+
+### T-007 — testes de CLI e casos extremos · `620eb34` (integrada em `d2d94e5`)
+Escopo: somente `tests/test_cli.py` (68 linhas) e `tests/test_edge_cases.py` (135 linhas); motor e testes existentes intocados (`git diff --stat`).
+
+| Verificação (árvore do Claude, pós-merge) | Resultado |
+|---|---|
+| `python -m unittest discover -s tests` | 28 testes: 27 OK + 1 `expectedFailure`; 0,6 s |
+| Com `TEMP`/`TMP` inexistentes | idem |
+| `git status`; resíduo em `.test-tmp/` | limpo; 0 itens |
+| `expectedFailure` rodado sem o decorator | falha com `AssertionError` (confirma que não mascara) |
+
+`expectedFailure` registrado: `test_csv_finding_uses_physical_line_after_multiline_record` — achados numeram registros lógicos (`[2,3]`), não linhas físicas (`[2,4]`) após campo multilinha. Corresponde ao achado B-10; correção prevista na **T-004** (o teste passa a ser normal). Observação: o contrato atual documenta "registros", então a mudança para linha física é alteração de comportamento a constar no CHANGELOG.
+
+Cobertura nova: códigos de saída 0/1/2/3 e ausência de relatório no 3; determinismo byte a byte; não-eco de entrada; limites de dinheiro/datas/vigência; tolerância (despesa, líquido e pago da folha); contrato da política; cabeçalhos e linhas malformadas; BOM, CRLF, campo vazio, só cabeçalho, multilinha; limite de 100000 linhas.
+Lacunas conhecidas: sem teste de dígitos Unicode em datas/competência (coberto só em dinheiro) e sem teste de `paid > gross` isolado; ficam para a T-004.
