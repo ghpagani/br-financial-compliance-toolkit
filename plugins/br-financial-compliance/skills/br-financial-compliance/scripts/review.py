@@ -8,6 +8,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 from collections import Counter, defaultdict
 from datetime import date
 from decimal import Decimal, InvalidOperation, getcontext, localcontext
@@ -53,7 +54,7 @@ MESSAGES = {
         'rounding': ROUNDING_POLICY,
         'basis': 'cash paid from supplied expense rows only',
         'limitations': ['Processed totals include flagged rows and exclude invalid rows; not certified totals.', 'Budget coverage is limited to supplied cash expense records; payroll is not included.', 'Input flags are assertions, not document authentication.', 'No bank reconciliation, legal tax rates, statutory payroll or payment execution.'],
-        'labels': {'title':'Financial review', 'version':'Tool version', 'policy':'Policy', 'source':'Source', 'period':'Period', 'scope':'Scope', 'coverage':'Coverage', 'totals':'Totals', 'findings':'Findings', 'budgets':'Budgets', 'limitations':'Limitations', 'pending':'Reviewer decision pending.', 'row':'Row', 'module':'Module', 'code':'Code', 'severity':'Severity', 'message':'Message', 'expected':'Expected', 'actual':'Actual', 'difference':'Difference', 'approved':'Approved', 'matched_paid':'Matched paid', 'remaining':'Remaining', 'basis':'Basis', 'measure':'Measure', 'value':'Value'},
+        'labels': {'title':'Financial review', 'version':'Tool version', 'policy':'Policy', 'source':'Source', 'period':'Period', 'scope':'Scope', 'coverage':'Coverage', 'totals':'Totals', 'findings':'Findings', 'budgets':'Budgets', 'limitations':'Limitations', 'pending':'Reviewer decision pending.', 'row':'Row', 'module':'Module', 'code':'Code', 'severity':'Severity', 'message':'Message', 'expected':'Expected', 'actual':'Actual', 'difference':'Difference', 'approved':'Approved', 'matched_paid':'Matched paid', 'remaining':'Remaining', 'basis':'Basis', 'measure':'Measure', 'value':'Value', 'expense_rows':'Expense rows', 'expense_processed':'Expenses processed', 'payroll_rows':'Payroll rows', 'payroll_processed':'Payroll rows processed', 'budget_rows':'Budget rows', 'budget_evaluated':'Budgets evaluated', 'budget_unmatched_expenses':'Expenses without a matching budget', 'expense_paid_processed':'Processed expenses paid', 'payroll_paid_processed':'Processed payroll paid', 'expense_paid_matched_to_budget':'Expenses paid matched to budget'},
     },
     'pt-BR': {
         'findings': {
@@ -71,7 +72,7 @@ MESSAGES = {
             'PAY_REPEAT': 'Pessoa e competência repetidas; verifique processamentos separados ou possível repetição de pagamento.',
             'BUDGET_OVER': 'Pagamentos associados superam o orçamento informado.',
         },
-        'scope': 'Somente verificações aritméticas e da política informada. Não constitui parecer legal ou de auditoria.',
+        'scope': 'Somente verificações aritméticas e da política informada. Sem parecer legal, sobre fraude ou de auditoria.',
         'rounding': 'Sem arredondamento; entrada limitada a duas casas decimais, aritmética Decimal exata.',
         'basis': 'somente despesas pagas informadas',
         'limitations': ['Totais processados incluem linhas sinalizadas e excluem linhas inválidas; não são totais certificados.', 'Cobertura orçamentária limitada às despesas pagas informadas; não inclui folha.', 'Indicadores são declarações, não autenticação de documentos.', 'Não há conciliação bancária, alíquotas legais, folha legal ou execução de pagamentos.'],
@@ -314,13 +315,21 @@ def markdown_escape(value):
     return text
 
 
+def markdown_escape_free_text(value):
+    # Encode punctuation before Markdown parsing; preserve HTML escaping for angle brackets.
+    punctuation = frozenset(':/@.*_~#!-+={}|`[]()\\')
+    return ''.join(' ' if unicodedata.category(char) in ('Cf', 'Cc') else
+                   f'&#{ord(char)};' if char in punctuation else
+                   html.escape(char, quote=True) for char in str(value))
+
+
 def markdown_report(report):
     labels = MESSAGES[report['language']]['labels']
     e = markdown_escape
     lines = [f"# {labels['title']}", '',
         f"- {labels['version']}: {e(report['tool_version'])}",
         f"- {labels['policy']}: {e(report['policy_version'])}",
-        f"- {labels['source']}: {e(report['policy_source'])}",
+        f"- {labels['source']}: {markdown_escape_free_text(report['policy_source'])}",
         f"- {labels['period']}: {e(report['policy_period'][0])} — {e(report['policy_period'][1])}",
         f"- {labels['scope']}: {e(report['scope'])}", '']
 
@@ -346,7 +355,7 @@ def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--policy',required=True)
     for k in FIELDS: parser.add_argument('--'+k)
-    parser.add_argument('--out',required=True,help='New JSON output; refuses overwrite')
+    parser.add_argument('--out',required=True,help='New report file (JSON or Markdown); refuses overwrite')
     parser.add_argument('--lang', choices=['en','pt-BR'], default='en')
     parser.add_argument('--format', choices=['json','md'], default='json')
     args=parser.parse_args(argv)
