@@ -183,3 +183,15 @@ Limite: a verificação inspeciona o texto gerado; **não** foi renderizado em v
 `VERSION` em `review.py` e os dois `plugin.json`: `0.1.0` → `0.1.1` (só esses 3 lugares; nenhum teste fixava a versão). `validate_plugin` 0; relatório emite `tool_version: 0.1.1`; build gera `…-0.1.1.zip` (skill `d8583ab4…c50b3`, plugin `044aa840…48a69`, hashes desta árvore, antes dos commits finais — não são os hashes de uma publicação). **Nenhuma versão foi publicada**: CHANGELOG segue "Unreleased".
 `SECURITY.md` atualizado para a afirmação agora verificada (com o limite acima).
 
+### T-008 (conclusão) — contrato de dados, fontes e teste de consistência · Claude
+- `docs/DATA-CONTRACT.md` e a cópia da skill (`references/data-contract.md`): título 0.1.1; tabela dos **11 motivos de rejeição** (`reason`) com significado e `field` típico — antes o contrato citava "a fixed reason" sem listar os valores; resumo em português.
+- `docs/SOURCES.md` e `references/sources.md`: **corrigida uma afirmação não reproduzida** — a LGPD (Planalto) constava como "verified 2026-11-27"; nesta máquina o Planalto não responde (timeout), então passou a "unverified"; CLT idem; texto em português acrescentado. eSocial segue "verified" (HTTP 200 reproduzido).
+- Novo `tests/test_contract_docs.py`: (1) os motivos documentados nas duas cópias do contrato = `REASONS` do motor; (2) as duas cópias do contrato diferem só na linha do caminho da política.
+
+| Verificação | Resultado |
+|---|---|
+| `discover -s tests` (normal e `TEMP`/`TMP` inexistentes) | 62 testes OK |
+| Mutação 1: remover o motivo `CURRENCY` do contrato | os 2 testes novos falham |
+| Mutação 2: editar uma linha da cópia da skill | o teste de cópias falha |
+| `validate_plugin.py`; docs sem caracteres de controle | saída 0; ok |
+

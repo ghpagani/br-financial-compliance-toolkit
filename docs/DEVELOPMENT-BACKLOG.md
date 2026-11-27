@@ -26,7 +26,7 @@ Legenda de status: `A fazer` · `Delegada` · `Em revisão` · `Aceita` · `Bloq
 | T-006 | Relatórios PT/EN e saída Markdown | Codex | T-005 | Aceita (merge 51a6a87; correções em T-006b `a16982e` e T-006c `cce3b0e`) |
 | T-006b | Correções do Markdown/i18n apontadas na revisão da T-006 | Codex | T-006 | Aceita (merge 1b74d00) |
 | T-006c | Separadores U+2028/U+2029 e `$` no escape do Markdown (achado da revisão da T-006b) | Claude | T-006b | Aceita (`cce3b0e`) |
-| T-008 | Documentação, licenças, atribuições, versão 0.1.1, CHANGELOG | Claude | T-002, T-006 | Parcial: docs reescritos, versão 0.1.1 aplicada, SECURITY reverificado; falta versão PT de `docs/DATA-CONTRACT.md` e `docs/SOURCES.md` |
+| T-008 | Documentação, licenças, atribuições, versão 0.1.1, CHANGELOG | Claude | T-002, T-006 | Concluída: docs bilíngues, versão 0.1.1 aplicada (não publicada), SECURITY verificado, contrato com motivos documentados e teste de consistência |
 | T-009 | Governança: RULE-REGISTRY e esquema de regra (sem regra legal) | Claude | — | Em andamento |
 | T-010 | Leitura integral dos ADRs/Flyway da RTC; verificar links e vigência (requer rede) | Claude | — | Concluída (ressalva: 2 links do Planalto não verificáveis) |
 
