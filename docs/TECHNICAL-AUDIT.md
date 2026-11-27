@@ -79,6 +79,26 @@ Conteúdo idêntico ao do repositório; difere apenas o fim de linha (CRLF na c�
 - Links de `docs/SOURCES.md` e demais documentos: 14 de 16 verificados (HTTP 200; GitHub ADR001/003 deram 503 e passaram no retry). **Os 2 links do Planalto (CLT, LGPD) não responderam desta máquina** (timeout de 25 s e 60 s, inclusive a página inicial): **não verificados**, não necessariamente inválidos. O registro afirma "verified 2026-11-27" para a LGPD; essa verificação **não foi reproduzida** aqui.
 - Revisão completa de `README*`, `SECURITY.md`, `CONTRIBUTING.md`, `INSTALL.md` e licenças (T-008, pendente).
 
+## 7b. Estado dos achados ao fim da v0.1.1 (2026-11-27)
+
+| ID | Estado | Resolução e ressalva |
+|---|---|---|
+| A-01 testes dependiam do temp do sistema | Mitigado; causa **não confirmada** | T-001. O Codex não reproduziu a falha original no sandbox dele |
+| A-02 plugin sem `examples/` | Resolvido | T-003; `test_references` e `validate_plugin` impedem regressão |
+| A-03 sem ZIP reproduzível | Resolvido, com ressalva | T-002; hashes idênticos em 3 builds/clones; vale para a mesma zlib; CI **não executado** |
+| M-04 relatório parcial em falha de gravação | Resolvido | T-004; falhas injetadas (`json.dump`, `os.link`) sem resíduo. Exige volume com hard link (documentado) |
+| M-05 rejeição sem motivo | Resolvido | T-004 (`reason`/`field`); contrato documenta os 11 valores e um teste os mantém iguais ao código |
+| M-06 quase-duplicidade | Resolvido | T-004 (`EXP_POSSIBLE_DUPLICATE_AMOUNT`); ruído conhecido em grupos {A,A,B} |
+| M-07 sem memória de cálculo | Resolvido | T-005; recomputação independente de 18755 achados sem divergência |
+| M-08 só inglês, sem Markdown | Resolvido | T-006/6b/6c; escape verificado por inspeção do texto gerado, **não** por renderização |
+| M-09 cobertura de testes | Resolvido | de 16 para 62 testes |
+| B-10 número de linha | Resolvido | T-004; muda só para CSV com campo multilinha (no CHANGELOG) |
+| B-11, B-12 | Resolvidos | T-004 |
+| B-13 CI só no Ubuntu | **Parcial** | workflow com Ubuntu/Windows × 3.10/3.12 escrito, **nunca executado**; 3.10 só verificado estaticamente |
+| B-14 artefatos locais no pacote | Resolvido | build usa `git ls-files` |
+
+Achados novos durante o desenvolvimento: autolinks e caracteres bidi/separadores no Markdown (corrigidos em T-006b/c); teste que estourava `MAX_PATH` no Windows em caminho profundo (corrigido, achado por clone limpo); afirmação "verified" da LGPD no registro de fontes não reproduzível (corrigida); links do Planalto não verificáveis nesta máquina (aberto).
+
 ## 8. Conclusão
 
 O núcleo é pequeno, determinístico e conservador; a base é adequada para evoluir. Os riscos relevantes da v0.1.0 são de **distribuição** (A-02, A-03), **testabilidade em sandbox** (A-01) e **rastreabilidade** (M-04…M-07), não de aritmética. Nenhum achado indica erro de cálculo nos 16 cenários cobertos; isso não equivale a certificação.

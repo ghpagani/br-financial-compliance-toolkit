@@ -39,3 +39,9 @@ Os dois worktrees compartilham o mesmo repositório Git local, então o Claude l
 
 - O terminal do Codex não é um worker gerenciado (`worker-start`): sem `worker_done` automático; a conclusão é por mensagem. Se a mensagem não chegar, o estado real é verificado pelo `git log` da branch dele.
 - Entrega por terminal não é durável; reenviar a partir deste arquivo se necessário.
+
+## Estado ao fim da v0.1.1 (2026-11-27)
+- Todas as tarefas de código (T-001…T-007, T-006b, T-006c) estão aceitas e integradas em `ghpagani/br-financial-compliance-toolkit`; T-008 e T-010 concluídas; T-009 (governança) com esquema e registro documentados, carregador fica para a v0.2.0 M1.
+- O Implementador (`ghpagani/Implementador`) está ocioso, sem trabalho pendente. Próxima tarefa só após decisão humana (ver "Decisões humanas pendentes" no relatório final).
+- Para retomar: `git log --oneline 5e49d39..HEAD` na branch de integração; este arquivo e `DEVELOPMENT-BACKLOG.md` são a fonte da verdade; o canal Orca de terminal não é durável.
+- Lições de processo: (1) não encadear `commit` depois de script que pode falhar; (2) rodar a suíte também após commits só de documentação (um relatório meu quebrou `test_references`); (3) verificar em **clone limpo e profundo**, não só na árvore de trabalho; (4) heredocs grandes no Bash podem falhar no parse: gravar o script com a ferramenta de escrita.

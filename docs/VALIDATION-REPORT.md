@@ -194,3 +194,25 @@ Limite: a verificação inspeciona o texto gerado; **não** foi renderizado em v
 | Mutação 1: remover o motivo `CURRENCY` do contrato | os 2 testes novos falham |
 | Mutação 2: editar uma linha da cópia da skill | o teste de cópias falha |
 | `validate_plugin.py`; docs sem caracteres de controle | saída 0; ok |
+
+## Verificação final da v0.1.1 — clone limpo · 2026-11-27 (Claude)
+Método: `git clone --local --branch ghpagani/br-financial-compliance-toolkit` para um diretório novo e profundo (111 caracteres), sem arquivos não rastreados; HEAD `9c04f00`; Windows 11, Python 3.12.10.
+
+| Verificação | Resultado |
+|---|---|
+| `python -m unittest discover -s tests` | **62 testes OK**, 0 falhas, 0 `expectedFailure` |
+| Idem com `TEMP`/`TMP` apontando para diretório inexistente | 62 OK |
+| `python scripts/validate_plugin.py` | passou |
+| `git status` após os testes | 0 itens (nada residual) |
+| `git diff --check 5e49d39..HEAD` | limpo (após remover 2 linhas em branco finais minhas) |
+| Build duplo (`build_release.py`, dois diretórios de saída) | `SHA256SUMS` idênticos |
+| Hashes em 2 clones feitos em momentos diferentes (antes e depois do ajuste de testes) | idênticos: skill `60835c2b38288b7ba5531bd2f7a70457513d33a648bfceebf0c79f8a62f6bba5`, plugin `48ff76265fb60456954fedc7c47eb13feb00b699dfd6a4c2170473dfa44c55f7` (`…-0.1.1.zip`) |
+| ZIP da skill extraído, demo em en/json, en/md, pt-BR/json, pt-BR/md | 4× saída 1; `tool_version` 0.1.1; totais `2850.00` / `9000.00` / `2650.00` |
+| ZIP do plugin extraído, demo pt-BR/md | saída 1; relatório em português |
+| Varredura dos arquivos rastreados: CPF, e-mails reais, padrões de chave/segredo | nada encontrado |
+| Mudança total vs. v0.1.0 (`5e49d39`) | 42 arquivos, +1983/−124, 42 commits na branch de integração |
+
+**Defeito encontrado por esta verificação:** `test_validator_rejects_version_mismatch_in_copy` falhava com `WinError 3` (caminho > 260) porque copiava `__pycache__` para um diretório temporário de nome longo; **só aparecia em caminho profundo e não na minha árvore de trabalho**. Corrigido (cópia sem `__pycache__`; nome curto do diretório) e reverificado no mesmo cenário. Este é o motivo de a verificação final ser feita em clone limpo.
+
+**Não verificado (limites declarados):** CI do GitHub Actions (nunca executado); testes em Python 3.10 (só verificação estática de sintaxe/APIs) e em Linux/macOS; renderização do Markdown em visualizadores reais; comportamento em volume sem hard link; os 2 links do Planalto; instalação real da skill/plugin em Claude Code e Codex (manifestos de marketplace seguem experimentais); a falha original dos 3 testes no sandbox do Codex.
+**Escopo:** apoio à decisão técnica. Não é certificação, parecer contábil, jurídico ou de auditoria. Nada foi publicado, enviado ao remoto, mesclado na `main` ou liberado como versão.
