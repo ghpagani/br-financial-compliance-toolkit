@@ -19,7 +19,7 @@ Legenda de status: `A fazer` · `Delegada` · `Em revisão` · `Aceita` · `Bloq
 |---|---|---|---|---|
 | T-001 | Testes compatíveis com sandbox (sem temp do sistema) | Codex | — | Aceita (25f87b5) |
 | T-007 | Testes de CLI, CSV malformado/Unicode e casos extremos | Codex | T-001 | Aceita (d2d94e5) |
-| T-003 | Exemplos e política dentro do plugin; corrigir referências | Codex | T-001 | Delegada |
+| T-003 | Exemplos e política dentro do plugin; corrigir referências | Codex | T-001 | Aceita (b10b3ce) |
 | T-002 | ZIP reproduzível + validação de estrutura do plugin + CI | Codex | T-003 | A fazer |
 | T-004 | Endurecimento do motor: motivos de rejeição, quase-duplicidade, gravação atômica | Codex | T-001, T-007 | A fazer |
 | T-005 | Memória de cálculo estruturada | Codex | T-004 | A fazer |

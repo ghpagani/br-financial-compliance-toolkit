@@ -44,3 +44,16 @@ Escopo: somente `tests/test_cli.py` (68 linhas) e `tests/test_edge_cases.py` (13
 
 Cobertura nova: códigos de saída 0/1/2/3 e ausência de relatório no 3; determinismo byte a byte; não-eco de entrada; limites de dinheiro/datas/vigência; tolerância (despesa, líquido e pago da folha); contrato da política; cabeçalhos e linhas malformadas; BOM, CRLF, campo vazio, só cabeçalho, multilinha; limite de 100000 linhas.
 Lacunas conhecidas: sem teste de dígitos Unicode em datas/competência (coberto só em dinheiro) e sem teste de `paid > gross` isolado; ficam para a T-004.
+
+### T-003 — exemplos dentro do plugin · `eb400ce` (integrada em `b10b3ce`)
+Escopo (`git diff -M --stat`): 4 renames 100% `examples/` → `plugins/.../skills/br-financial-compliance/examples/`; caminhos atualizados em README PT/EN, CI, `.gitignore`, `docs/DATA-CONTRACT.md`, 3 arquivos de teste; CHANGELOG (seção Unreleased); novo `tests/test_references.py`. Extra declarado pelo Codex: ajuste textual em `docs/TECHNICAL-AUDIT.md` (menção histórica virou prosa) — aceito.
+
+| Verificação (árvore do Claude, pós-merge) | Resultado |
+|---|---|
+| `python -m unittest discover -s tests` (normal e com `TEMP`/`TMP` inexistentes) | 29 testes: 28 OK + 1 `expectedFailure` (o de T-004) |
+| `git ls-files \| grep examples` | 4 arquivos, só no novo local; `examples/` da raiz não existe |
+| SHA-256 dos 4 arquivos, v0.1.0 vs atual (ignorando fim de linha) | idênticos |
+| Mutação: citar `examples/inexistente.csv` no README | `test_references` falha apontando o arquivo e a referência; README restaurado, árvore limpa |
+| Comando de demonstração copiado do README, executado da raiz | saída 1; totais `2850.00` / `9000.00` / `2650.00` |
+
+Ressalvas: o comando de demonstração ficou longo (caminho completo do plugin); o `.gitignore` agora tem exceção específica ao caminho novo (um CSV novo em outro lugar continua ignorado, como desejado). `python -m unittest tests.test_references` (módulo a partir da raiz) falha por import, igual à ressalva da T-001; o comando oficial é `discover -s tests`.
