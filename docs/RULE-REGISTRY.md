@@ -20,18 +20,13 @@ Versão de regra = `policy.version` informada pelo usuário. Fonte: política do
 | `EXP_APPROVAL` | despesas | REVIEW | política exige aprovação e `approval ≠ yes` | — |
 | `EXP_BUDGET_UNMATCHED` | despesas | REVIEW | não há exatamente 1 orçamento aplicável (projeto, categoria, data) | — |
 | `EXP_POSSIBLE_DUPLICATE` | despesas | REVIEW | repetição de `(vendor, invoice)` | — |
+| `EXP_POSSIBLE_DUPLICATE_AMOUNT` | despesas | REVIEW | mesmo fornecedor, valor pago e data com referências de NF diferentes; verificar parcelas ou repetição | — |
 | `PAY_NET_DIFF` | folha | REVIEW | `abs((gross − deductions) − net) > tolerância` (**não** é cálculo legal) | `net − (gross − deductions)` |
 | `PAY_PAID_DIFF` | folha | REVIEW | `abs(net − paid) > tolerância` | `paid − net` |
 | `PAY_APPROVAL` | folha | REVIEW | política exige aprovação e `approval ≠ yes` | — |
 | `PAY_REPEAT` | folha | REVIEW | repetição de `(employee, period)` | — |
 | `BUDGET_OVERLAP` | orçamento | BLOCKER | períodos sobrepostos para o mesmo projeto/categoria | — |
 | `BUDGET_OVER` | orçamento | REVIEW | `pago_associado > aprovado + tolerância` (regime de caixa, só despesas fornecidas) | `pago − aprovado` |
-
-## Regras planejadas (v0.1.1)
-
-| Código | Tarefa | Observação |
-|---|---|---|
-| `EXP_POSSIBLE_DUPLICATE_AMOUNT` | T-004 | mesmo fornecedor + valor pago + data, NF diferente; REVIEW; não afirma duplicidade |
 
 ## Regras legais
 
