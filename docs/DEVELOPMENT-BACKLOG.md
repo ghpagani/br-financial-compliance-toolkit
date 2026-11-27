@@ -5,7 +5,7 @@ Atualizado: 2026-11-27 · Base: `5e49d39` · Líder/revisor: Claude · Implement
 ## Regras de coordenação
 
 1. **Um dono por arquivo.** Tarefas que tocam `review.py` são sequenciais. Nenhum agente edita arquivo de outra tarefa em andamento.
-2. Fluxo: Codex implementa na branch `ghpagani/Implementador` com commits focados (um por tarefa) → informa o SHA → Claude revisa o diff, roda os testes e registra evidência em `docs/VALIDATION-REPORT.md` → Claude integra na branch `ghpagani/br-financial-compliance-toolkit` (fast-forward ou merge) → próxima tarefa parte do novo SHA.
+2. Fluxo (integração por merge `--no-ff`, pois a branch de integração recebe commits de docs): Codex implementa na branch `ghpagani/Implementador` com commits focados (um por tarefa) → informa o SHA → Claude revisa o diff, roda os testes e registra evidência em `docs/VALIDATION-REPORT.md` → Claude integra na branch `ghpagani/br-financial-compliance-toolkit` (fast-forward ou merge) → próxima tarefa parte do novo SHA.
 3. Sem push, sem merge na `main`, sem release (exige autorização humana).
 4. Sem desabilitar sandbox, sem elevar privilégios, sem dados reais. Comandos: `python -m unittest discover -s tests -v`.
 5. Mudança de comportamento só com teste que a descreva **e** entrada no CHANGELOG. Nunca ajustar um cálculo para um teste passar.
@@ -17,7 +17,7 @@ Legenda de status: `A fazer` · `Delegada` · `Em revisão` · `Aceita` · `Bloq
 
 | ID | Objetivo | Responsável | Depende de | Status |
 |---|---|---|---|---|
-| T-001 | Testes compatíveis com sandbox (sem temp do sistema) | Codex | — | Delegada |
+| T-001 | Testes compatíveis com sandbox (sem temp do sistema) | Codex | — | Aceita (25f87b5) |
 | T-007 | Testes de CLI, CSV malformado/Unicode e casos extremos | Codex | T-001 | A fazer |
 | T-003 | Exemplos e política dentro do plugin; corrigir referências | Codex | T-001 | A fazer |
 | T-002 | ZIP reproduzível + validação de estrutura do plugin + CI | Codex | T-003 | A fazer |

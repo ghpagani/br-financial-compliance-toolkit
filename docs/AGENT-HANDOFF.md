@@ -17,14 +17,14 @@ Os dois worktrees compartilham o mesmo repositório Git local, então o Claude l
 2. Codex: `git reset --hard <SHA de base>` **somente se a branch estiver limpa e sem trabalho próprio** (ou `git rebase`); implementa; roda `python -m unittest discover -s tests -v`; faz **um commit** `T-xxx: <resumo>`.
 3. Codex responde com: SHA, lista de arquivos, saída resumida dos testes (contagem e resultado), desvios do escopo, dúvidas.
 4. Claude revisa `git diff <base>..<sha>`, roda testes na própria árvore, confere critérios de aceitação, registra em `VALIDATION-REPORT.md`.
-5. Aceita → Claude integra (`git merge --ff-only`) e informa o novo SHA de base. Rejeitada → Claude envia correções objetivas na mesma tarefa.
+5. Aceita → Claude integra (`git merge --no-ff`; ff só quando a base não divergiu) e informa o novo SHA de base. Rejeitada → Claude envia correções objetivas na mesma tarefa.
 
 ## Registro de delegações (evidência)
 
 | Data | Tarefa | Enviada a | ID da mensagem | SHA base | Resultado |
 |---|---|---|---|---|---|
 | 2026-11-27 | coordenação inicial | Implementador | resposta `msg_9c1988924a3f` | `5e49d39` | Codex confirmou alinhamento da branch em `5e49d39` |
-| 2026-11-27 | T-001 | Implementador | `msg_aca8ae24b297` | `c5b9e6f` | Enviada; aguardando entrega (SHA + testes) |
+| 2026-11-27 | T-001 | Implementador | `msg_aca8ae24b297` | `c5b9e6f` | Entregue `4655036`; aceita, integrada em `25f87b5` |
 
 (Novas linhas são adicionadas a cada `send`/entrega. Uma tarefa só consta como delegada com o ID de mensagem aqui.)
 
