@@ -18,7 +18,8 @@ class PackagingTests(unittest.TestCase):
 
     def test_validator_rejects_version_mismatch_in_copy(self):
         validator = ROOT / 'scripts/validate_plugin.py'
-        self.assertEqual(self.command(validator).returncode, 0)
+        result = self.command(validator)
+        self.assertEqual(result.returncode, 0, result.stderr)
         with temporary_directory() as directory:
             copy = Path(directory)
             # Bytecode caches are never part of the package and lengthen paths on Windows (MAX_PATH).
@@ -31,7 +32,8 @@ class PackagingTests(unittest.TestCase):
             manifest.write_text(json.dumps(data), encoding='utf-8')
             self.assertNotEqual(self.command(validator, '--root', copy).returncode, 0)
             shutil.copyfile(ROOT / 'plugins/br-financial-compliance/.claude-plugin/plugin.json', manifest)
-            self.assertEqual(self.command(validator, '--root', copy).returncode, 0)
+            result = self.command(validator, '--root', copy)
+            self.assertEqual(result.returncode, 0, result.stderr)
             skill = copy / 'plugins/br-financial-compliance/skills/br-financial-compliance'
             for path, heading, error in [
                 (skill / 'SKILL.md', '# BR Financial Compliance Toolkit v', 'Skill heading version'),
