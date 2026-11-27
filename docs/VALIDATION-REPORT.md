@@ -165,3 +165,21 @@ Arquivos reescritos: `README.md`, `README.pt-BR.md` (paridade EN/PT), `docs/INST
 Correção de rumo registrada: uma primeira versão do `SECURITY.md` afirmava que o Markdown neutraliza links, ênfase e caracteres de controle; a sondagem da T-006 mostrou que isso **não** era verdade e o texto foi reescrito para o estado real (HTML, sintaxe de link e separadores de tabela escapados; URL solta, e-mail, ênfase e controle Unicode ainda não). Atualizar após aceitar a T-006b.
 Pendências da T-008: bump de versão para 0.1.1 em `review.py` e nos dois `plugin.json` (após a T-006b, para não conflitar), reverificar a afirmação do `SECURITY.md`, versão em português de `docs/DATA-CONTRACT.md`, e `docs/SOURCES.md` em PT.
 
+### T-006b — escape estrito de Markdown e ajustes de i18n · `a16982e` (merge `1b74d00`) + T-006c (Claude) `cce3b0e`
+Escopo da T-006b: `review.py` (+13/−4) e `tests/test_markdown_escape.py` (novo, 72). Nada fora do permitido; nenhuma asserção anterior alterada. Decisão registrada: `&gt;`/`&lt;`/`&amp;`/`&quot;` (entidades nomeadas) satisfazem o requisito ("nada interpretável"); a redação da especificação pedindo entidades numéricas era excessiva e foi corrigida no backlog.
+
+| Verificação (árvore do Claude) | Resultado |
+|---|---|
+| `discover -s tests` (normal e `TEMP`/`TMP` inexistentes), `validate_plugin.py` | 59 testes OK; saída 0 |
+| Diferencial do Codex: JSON `--lang en` entre `fd721ce` e `a16982e` | sem diferenças; JSON pt-BR só difere em `$.scope` (informado; não reexecutado por mim) |
+| **Minha sondagem adversarial**, os 12 casos que falharam na T-006 | todos corrigidos: URL com esquema, `www.`, e-mail, ênfase, bidi/zero-width, imagem, rodapé de referência |
+| Meus 8 casos novos (não testados pelo Codex) | 6 ok (`mailto:`/`ftp:`, `<http://…>`, lista ordenada, setext/`---`/`***`, tabela injetada, tags Unicode); **2 achados**: U+2028/U+2029 (categorias `Zl`/`Zp`) passavam crus e quebram linha em alguns visualizadores/scripts; `$…$` não escapado (renderiza fórmula no GitHub) |
+
+**T-006c (feita por Claude, não pelo Codex):** `review.py` passa a tratar `Zl`/`Zp` como espaço e a escapar `$`; o teste novo `test_line_paragraph_separators_and_math_dollar` **falha sem a correção** (`60 != 58` linhas; confirmado revertendo o arquivo) e passa com ela. Motivo de eu ter feito: correção de uma linha, Codex ocioso e eu já editava `review.py` para o bump de versão; a revisão independente fica comprometida por eu ter implementado — o teste e a sondagem são a salvaguarda.
+Pós-T-006c: 60 testes OK (também com `TEMP`/`TMP` inexistentes), `validate_plugin` 0, sondagem 19/20 sem achados (o 20º é a letra `^`, que não é metacaractere de Markdown — falso positivo do meu critério).
+Limite: a verificação inspeciona o texto gerado; **não** foi renderizado em visualizadores reais de Markdown.
+
+### Versão 0.1.1 aplicada · Claude
+`VERSION` em `review.py` e os dois `plugin.json`: `0.1.0` → `0.1.1` (só esses 3 lugares; nenhum teste fixava a versão). `validate_plugin` 0; relatório emite `tool_version: 0.1.1`; build gera `…-0.1.1.zip` (skill `d8583ab4…c50b3`, plugin `044aa840…48a69`, hashes desta árvore, antes dos commits finais — não são os hashes de uma publicação). **Nenhuma versão foi publicada**: CHANGELOG segue "Unreleased".
+`SECURITY.md` atualizado para a afirmação agora verificada (com o limite acima).
+
