@@ -24,6 +24,7 @@ Os dois worktrees compartilham o mesmo repositório Git local, então o Claude l
 | Data | Tarefa | Enviada a | ID da mensagem | SHA base | Resultado |
 |---|---|---|---|---|---|
 | 2026-11-27 | coordenação inicial | Implementador | resposta `msg_9c1988924a3f` | `5e49d39` | Codex confirmou alinhamento da branch em `5e49d39` |
+| 2026-11-27 | T-001 | Implementador | `msg_aca8ae24b297` | `c5b9e6f` | Enviada; aguardando entrega (SHA + testes) |
 
 (Novas linhas são adicionadas a cada `send`/entrega. Uma tarefa só consta como delegada com o ID de mensagem aqui.)
 
