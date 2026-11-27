@@ -21,7 +21,8 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(self.command(validator).returncode, 0)
         with temporary_directory() as directory:
             copy = Path(directory)
-            shutil.copytree(ROOT / 'plugins', copy / 'plugins')
+            # Bytecode caches are never part of the package and lengthen paths on Windows (MAX_PATH).
+            shutil.copytree(ROOT / 'plugins', copy / 'plugins', ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
             shutil.copytree(ROOT / '.agents', copy / '.agents')
             shutil.copytree(ROOT / '.claude-plugin', copy / '.claude-plugin')
             manifest = copy / 'plugins/br-financial-compliance/.claude-plugin/plugin.json'

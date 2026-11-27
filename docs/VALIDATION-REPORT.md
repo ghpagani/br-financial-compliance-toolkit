@@ -194,4 +194,3 @@ Limite: a verificação inspeciona o texto gerado; **não** foi renderizado em v
 | Mutação 1: remover o motivo `CURRENCY` do contrato | os 2 testes novos falham |
 | Mutação 2: editar uma linha da cópia da skill | o teste de cópias falha |
 | `validate_plugin.py`; docs sem caracteres de controle | saída 0; ok |
-
