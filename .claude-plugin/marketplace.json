@@ -1,0 +1,13 @@
+{
+  "name": "br-financial-compliance-marketplace",
+  "owner": {
+    "name": "BR Financial Compliance Toolkit contributors"
+  },
+  "plugins": [
+    {
+      "name": "br-financial-compliance",
+      "source": "./plugins/br-financial-compliance",
+      "description": "Local-first preliminary financial review for Brazilian projects, expenses, payroll arithmetic and budgets."
+    }
+  ]
+}

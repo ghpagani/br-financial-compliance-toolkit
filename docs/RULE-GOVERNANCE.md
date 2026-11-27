@@ -1,0 +1,5 @@
+# Rule governance
+
+Distinguish arithmetic, internal policy, donor/contract and legal rules. A rule is not active merely because an AI proposes it. Future statutory rule packs require jurisdiction, applicability (regime, employment category, rubrics, exceptions), exact primary source and article/table, effective from/to, input/units, decimal/rounding procedure, version, test fixtures and independent accountant/legal review. Preserve superseded packs for historical periods; no silent fallback to current rates. No arbitrary executable expressions or eval from untrusted sources. Treat policy conflicts as unresolved and escalate. Changes require review and regression tests; release notes identify changes and coverage.
+
+Before RTC integration, pin an official release/commit, review license and data notices, verify supported operation and simulated versus actual calculation states, run reference fixtures, expose status per item and exclude failed calculations explicitly. Do not claim official approval.

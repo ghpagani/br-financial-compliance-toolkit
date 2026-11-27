@@ -1,0 +1,22 @@
+name: Financial core checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest discover -s tests -v
+      - run: |
+          set +e
+          python plugins/br-financial-compliance/skills/br-financial-compliance/scripts/review.py --policy examples/policy.json --expenses examples/expenses.csv --payroll examples/payroll.csv --budgets examples/budgets.csv --out demo-report.json
+          code=$?
+          set -e
+          test "$code" -eq 1

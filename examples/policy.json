@@ -1,0 +1,10 @@
+{
+  "version": "demo-v1",
+  "effective_from": "2026-01-01",
+  "effective_to": "2026-12-31",
+  "currency": "BRL",
+  "tolerance": "0.01",
+  "require_document": true,
+  "require_approval": true,
+  "source": "FICTIONAL demo policy; not a legal or institutional norm"
+}

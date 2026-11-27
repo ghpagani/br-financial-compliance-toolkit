@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+private/
+reports/
+*.xlsx
+*.xls
+*.pdf
+*.ofx
+*.db
+*.sqlite*
+*.key
+*.pem
+.DS_Store
+Thumbs.db
+# CSV/JSON datasets are denied outside explicit public fixtures by policy;
+# gitignore is not a DLP tool. Do not commit actual financial data.
+*.csv
+!examples/*.csv
+demo-report*.json

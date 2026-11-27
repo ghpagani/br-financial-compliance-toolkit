@@ -1,0 +1,16 @@
+{
+  "name": "br-financial-compliance-marketplace",
+  "plugins": [
+    {
+      "name": "br-financial-compliance",
+      "source": {
+        "source": "local",
+        "path": "./plugins/br-financial-compliance"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      }
+    }
+  ]
+}
