@@ -24,7 +24,7 @@ Escopo conferido por `git diff --stat`: `.gitignore`, `tests/support.py`, `tests
 | Verificação (árvore do Claude, pós-merge) | Resultado |
 |---|---|
 | `python -m unittest discover -s tests` | 17 testes OK (16 originais + 1 do helper) |
-| Mesmo comando com `TEMP`/`TMP` em `C:rfc-nonexistent-xyz` | 17 OK |
+| Mesmo comando com `TEMP`/`TMP` em `C:\brfc-nonexistent-xyz` | 17 OK |
 | `git status` após testes; conteúdo residual em `.test-tmp/` | limpo; 0 itens |
 | CLI da demo (`examples/`) | saída 1; totais `2850.00` / `9000.00` / `2650.00` |
 
