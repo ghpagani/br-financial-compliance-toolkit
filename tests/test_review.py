@@ -1,7 +1,7 @@
 import importlib.util
 import unittest
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from support import temporary_directory
 import json
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -10,6 +10,13 @@ spec=importlib.util.spec_from_file_location('review',PATH)
 m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
 
 class ReviewTests(unittest.TestCase):
+    def test_temporary_directory_helper(self):
+        with temporary_directory() as directory:
+            path = Path(directory)
+            self.assertTrue(path.is_dir())
+            (path / 'synthetic.txt').write_text('synthetic', encoding='utf-8')
+        self.assertFalse(path.exists())
+
     def setUp(self):
         self.p=m.policy_load(ROOT/'examples/policy.json')
         self.e=m.read_csv(ROOT/'examples/expenses.csv','expenses')
@@ -41,15 +48,15 @@ class ReviewTests(unittest.TestCase):
     def test_no_budgets(self):
         self.b=[]; self.assertEqual(self.run_review()['coverage']['budget_unmatched_expenses'],5)
     def test_invalid_schema(self):
-        with TemporaryDirectory() as d:
+        with temporary_directory() as d:
             p=Path(d)/'x.csv'; p.write_text('id,unknown\n1,2\n');
             with self.assertRaises(ValueError): m.read_csv(p,'expenses')
     def test_policy_explicit(self):
-        with TemporaryDirectory() as d:
+        with temporary_directory() as d:
             p=Path(d)/'p.json'; self.p['require_document']='false'; p.write_text(json.dumps(self.p));
             with self.assertRaises(ValueError): m.policy_load(p)
     def test_no_overwrite(self):
-        with TemporaryDirectory() as d:
+        with temporary_directory() as d:
             p=Path(d)/'out.json'; p.write_text('original'); args=['--policy',str(ROOT/'examples/policy.json'),'--expenses',str(ROOT/'examples/expenses.csv'),'--out',str(p)]; self.assertEqual(m.main(args),3); self.assertEqual(p.read_text(),'original')
     def test_clean_row(self):
         self.e=[self.e[-1]];self.y=[self.y[0]];r=self.run_review();self.assertFalse(r['findings']);self.assertTrue(all(x['status']=='NO_CONFIGURED_FINDING' for x in r['rows']))

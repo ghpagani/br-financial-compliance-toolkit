@@ -1,6 +1,7 @@
 __pycache__/
 *.py[cod]
 .venv/
+.test-tmp/
 .env
 .env.*
 private/
