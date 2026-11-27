@@ -30,6 +30,23 @@ class PackagingTests(unittest.TestCase):
             data['version'] = '9.9.9'
             manifest.write_text(json.dumps(data), encoding='utf-8')
             self.assertNotEqual(self.command(validator, '--root', copy).returncode, 0)
+            shutil.copyfile(ROOT / 'plugins/br-financial-compliance/.claude-plugin/plugin.json', manifest)
+            self.assertEqual(self.command(validator, '--root', copy).returncode, 0)
+            skill = copy / 'plugins/br-financial-compliance/skills/br-financial-compliance'
+            for path, heading, error in [
+                (skill / 'SKILL.md', '# BR Financial Compliance Toolkit v', 'Skill heading version'),
+                (skill / 'references/controls.md', '# Implemented controls v', 'Controls heading version'),
+            ]:
+                with self.subTest(path=path.name):
+                    original = path.read_text(encoding='utf-8')
+                    import re
+                    changed, count = re.subn(re.escape(heading) + r'[0-9]+\.[0-9]+\.[0-9]+', heading + '9.9.9', original, count=1)
+                    self.assertEqual(count, 1)
+                    path.write_text(changed, encoding='utf-8')
+                    result = self.command(validator, '--root', copy)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(error, result.stderr)
+                    path.write_text(original, encoding='utf-8')
 
     def test_build_reproducibility_contents_and_extracted_demo(self):
         builder = ROOT / 'scripts/build_release.py'

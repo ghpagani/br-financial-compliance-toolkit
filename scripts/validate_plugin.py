@@ -52,6 +52,75 @@ def validate(root):
         raise ValueError('Invalid skill front matter name')
     if not re.search(r'^description:\s*\S.*$', front.group(1), re.MULTILINE):
         raise ValueError('Missing skill description')
+    controls_text = (skill_dir / 'references/controls.md').read_text(encoding='utf-8')
+    if not re.search(r'^# BR Financial Compliance Toolkit v' + re.escape(version) + r'\s*(['git', 'ls-files', '-z', '--', str(PLUGIN).replace('\\', '/')], cwd=ROOT).decode('utf-8').split('\0')
+    references = [SKILL / 'SKILL.md']
+    for item in filter(None, tracked):
+        path = Path(item)
+        if path.suffix.lower() in {'.csv', '.json'} and not (path.is_relative_to(SKILL / 'examples') or path in {PLUGIN / 'plugin.json', PLUGIN / '.claude-plugin/plugin.json'}):
+            raise ValueError(f'Unexpected tracked data file: {path}')
+        if path.is_relative_to(SKILL / 'references') and path.suffix == '.md':
+            references.append(path)
+    pattern = re.compile(r'`((?:references|scripts|templates|examples)/[A-Za-z0-9_.\-/]+)`')
+    for document in references:
+        text = (root / document).read_text(encoding='utf-8')
+        for reference in pattern.findall(text):
+            target = (skill_dir / reference).resolve()
+            if not target.is_relative_to(skill_dir.resolve()) or not target.is_file():
+                raise ValueError(f'Missing skill reference: {reference}')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--root', type=Path, default=ROOT)
+    args = parser.parse_args()
+    try:
+        validate(args.root.resolve())
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as exc:
+        print(f'Validation failed: {exc}', file=sys.stderr)
+        return 1
+    print('Plugin validation passed')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
+, skill_text, re.MULTILINE):
+        raise ValueError('Skill heading version does not match plugin')
+    if not re.search(r'^# Implemented controls v' + re.escape(version) + r'\s*(['git', 'ls-files', '-z', '--', str(PLUGIN).replace('\\', '/')], cwd=ROOT).decode('utf-8').split('\0')
+    references = [SKILL / 'SKILL.md']
+    for item in filter(None, tracked):
+        path = Path(item)
+        if path.suffix.lower() in {'.csv', '.json'} and not (path.is_relative_to(SKILL / 'examples') or path in {PLUGIN / 'plugin.json', PLUGIN / '.claude-plugin/plugin.json'}):
+            raise ValueError(f'Unexpected tracked data file: {path}')
+        if path.is_relative_to(SKILL / 'references') and path.suffix == '.md':
+            references.append(path)
+    pattern = re.compile(r'`((?:references|scripts|templates|examples)/[A-Za-z0-9_.\-/]+)`')
+    for document in references:
+        text = (root / document).read_text(encoding='utf-8')
+        for reference in pattern.findall(text):
+            target = (skill_dir / reference).resolve()
+            if not target.is_relative_to(skill_dir.resolve()) or not target.is_file():
+                raise ValueError(f'Missing skill reference: {reference}')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--root', type=Path, default=ROOT)
+    args = parser.parse_args()
+    try:
+        validate(args.root.resolve())
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as exc:
+        print(f'Validation failed: {exc}', file=sys.stderr)
+        return 1
+    print('Plugin validation passed')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
+, controls_text, re.MULTILINE):
+        raise ValueError('Controls heading version does not match plugin')
     tracked = subprocess.check_output(['git', 'ls-files', '-z', '--', str(PLUGIN).replace('\\', '/')], cwd=ROOT).decode('utf-8').split('\0')
     references = [SKILL / 'SKILL.md']
     for item in filter(None, tracked):
