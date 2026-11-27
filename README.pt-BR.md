@@ -20,7 +20,7 @@ Não calcula encargos legais, impostos nem folha de pagamento completa. Não val
 Instale Python 3.10 ou superior. Na raiz do repositório, rode:
 
 ```powershell
-python plugins/br-financial-compliance/skills/br-financial-compliance/scripts/review.py --policy examples/policy.json --expenses examples/expenses.csv --payroll examples/payroll.csv --budgets examples/budgets.csv --out demo-report.json
+python plugins/br-financial-compliance/skills/br-financial-compliance/scripts/review.py --policy plugins/br-financial-compliance/skills/br-financial-compliance/examples/policy.json --expenses plugins/br-financial-compliance/skills/br-financial-compliance/examples/expenses.csv --payroll plugins/br-financial-compliance/skills/br-financial-compliance/examples/payroll.csv --budgets plugins/br-financial-compliance/skills/br-financial-compliance/examples/budgets.csv --out demo-report.json
 python -m unittest discover -s tests -v
 ```
 

@@ -17,7 +17,7 @@ An independent, local-first toolkit for financial review, internal controls and 
 Python 3.10+; run from repository root. All example data is fictional.
 
 ```bash
-python plugins/br-financial-compliance/skills/br-financial-compliance/scripts/review.py --policy examples/policy.json --expenses examples/expenses.csv --payroll examples/payroll.csv --budgets examples/budgets.csv --out demo-report.json
+python plugins/br-financial-compliance/skills/br-financial-compliance/scripts/review.py --policy plugins/br-financial-compliance/skills/br-financial-compliance/examples/policy.json --expenses plugins/br-financial-compliance/skills/br-financial-compliance/examples/expenses.csv --payroll plugins/br-financial-compliance/skills/br-financial-compliance/examples/payroll.csv --budgets plugins/br-financial-compliance/skills/br-financial-compliance/examples/budgets.csv --out demo-report.json
 python -m unittest discover -s tests -v
 ```
 

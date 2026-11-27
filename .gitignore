@@ -19,5 +19,5 @@ Thumbs.db
 # CSV/JSON datasets are denied outside explicit public fixtures by policy;
 # gitignore is not a DLP tool. Do not commit actual financial data.
 *.csv
-!examples/*.csv
+!plugins/br-financial-compliance/skills/br-financial-compliance/examples/*.csv
 demo-report*.json

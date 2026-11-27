@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- Changed: exemplos movidos para dentro da skill (plugins/.../examples/); caminho da raiz removido
+
 ## 0.1.0 — initial preview
 - Local CSV review and JSON report.
 - Expense checks, payroll arithmetic, budget matching.
