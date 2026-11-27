@@ -116,3 +116,14 @@ Escopo (`git diff --stat`): `review.py` (+26/−7), `tests/test_calculation.py` 
 
 A afirmação "nenhum arredondamento; entrada com até 2 casas; aritmética Decimal exata" foi **verificada**, não presumida: vale enquanto as somas couberem na precisão 40 (máx. 14 dígitos inteiros × 100000 linhas ≈ 20 dígitos).
 **Imprecisão aceita e a corrigir na T-006:** o `comparison` de `BUDGET_OVER` diz `actual > expected + tolerance`, nomes que não são operandos daquele cálculo (`approved`, `matched_paid`). Não afeta valores nem decisão.
+
+### T-010 — referências oficiais · 2026-11-27 (Claude, com acesso à rede)
+| Verificação | Resultado |
+|---|---|
+| `git fetch` + `git pull --ff-only` no clone da RTC (árvore limpa antes; nada executado, sem `mvnw`) | `150cccb` (2026-10-22) → `0d4b073` (2026-11-26), 6 commits, tags 1.7.2 e 1.7.3 |
+| ADRs alterados upstream | ADR003 reescrito (+132 linhas, 17/11/2026), ADR005 editado, ADR011 novo, índice |
+| Leitura integral | ADR001, 003, 007, 009, 010; estrutura de `flyway/sql` e `MemoriaCalculoDomain` — ver `TECHNICAL-AUDIT.md` §5 |
+| Links de `docs/SOURCES.md`, `references/sources.md`, README PT/EN, SECURITY, CONTRIBUTING, INSTALL (16 URLs únicas, `curl`, sem enviar dados do projeto) | 14 com HTTP 200 (GitHub ADR001/003 deram 503 na 1ª tentativa e 200 no retry) |
+| Planalto (CLT `del5452`, LGPD `l13709`) | **Sem resposta**: timeout em 25 s e 60 s, inclusive na página inicial; IP resolvido. **Não verificado** (pode ser bloqueio de rede local). O registro diz "verified 2026-11-27" para a LGPD: **não reproduzido** nesta máquina |
+
+Mudanças de documentação decorrentes: `docs/SOURCES.md` e `references/sources.md` (commit e data da referência; ADR003 reescrito), `TECHNICAL-AUDIT.md` §5/§7, `DECISIONS.md` D-008/D-009, `RULE-REGISTRY.md`, backlog (T-010, M1).

@@ -26,7 +26,7 @@ Legenda de status: `A fazer` · `Delegada` · `Em revisão` · `Aceita` · `Bloq
 | T-006 | Relatórios PT/EN e saída Markdown | Codex | T-005 | Delegada |
 | T-008 | Documentação, licenças, atribuições, versão 0.1.1, CHANGELOG | Claude | T-002, T-006 | A fazer |
 | T-009 | Governança: RULE-REGISTRY e esquema de regra (sem regra legal) | Claude | — | Em andamento |
-| T-010 | Leitura integral dos ADRs/Flyway da RTC; verificar links e vigência (requer rede) | Claude | — | A fazer |
+| T-010 | Leitura integral dos ADRs/Flyway da RTC; verificar links e vigência (requer rede) | Claude | — | Concluída (ressalva: 2 links do Planalto não verificáveis) |
 
 Ordem de execução do Codex: **T-001 → T-007 → T-003 → T-002 → T-004 → T-005 → T-006**. T-007 e T-003 tocam arquivos distintos após T-001, mas há um só implementador; a ordem acima prioriza rede de segurança de testes antes de mexer no motor.
 
@@ -135,7 +135,7 @@ Ordem proposta, após a v0.1.1 aceita e autorização humana para iniciar:
 
 | Marco | Item | Observação normativa |
 |---|---|---|
-| M1 | Esquema de regras versionadas + carregador + testes (T-009 prepara) | Infraestrutura apenas |
+| M1 | Esquema de regras versionadas + carregador + testes (T-009 prepara). Inclui módulo único de arredondamento com modo por regra e teste de arquitetura (D-008) e regras declarativas sem avaliação de expressões arbitrárias (D-009) | Infraestrutura apenas |
 | M2 | Importação de Excel (`.xlsx`) para o contrato CSV | Biblioteca nova → **perguntar antes** (regra do projeto); alternativa: leitor `zipfile`+`xml` da stdlib restrito a valores, sem fórmulas/macros |
 | M3 | Estornos e ajustes (lançamentos com referência ao original, sinal explícito) | Contrato de dados novo; dinheiro negativo hoje é rejeitado |
 | M4 | Múltiplas moedas | Cotação **somente fornecida pelo usuário com fonte e data**; nunca buscar online; sem conversão silenciosa |

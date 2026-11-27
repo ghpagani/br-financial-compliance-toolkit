@@ -54,15 +54,19 @@ Confirmado **sem defeito** nas sondagens: `paid > gross` é sinalizado (simétri
 
 ## 5. Referência arquitetural (Receita Federal, calculadora RTC)
 
-Lido nesta fase: ADR001 (cálculo por expressão), ADR003 (precisão numérica), ADR010 (observabilidade) — via citações já registradas em `references/sources.md`; leitura integral dos ADRs 001/003/010 e do esquema Flyway: **pendente** (T-010). Princípios aplicáveis ao toolkit, sem copiar código ou tabelas:
+Leitura feita em 2026-11-27 sobre o clone local, atualizado por `git pull --ff-only` de `150cccb` (2026-10-22) para **`0d4b073` (2026-11-26, tag 1.7.3)**: ADR001, 003, 007, 009 e 010 integralmente; ADR011 (Spring Boot 4/Java 25, sem relação com o toolkit); estrutura de `flyway/sql`; `MemoriaCalculoDomain`. Nada foi executado (sem `mvnw`) e nenhum código ou tabela foi copiado.
 
-1. Regras versionadas e com vigência, separadas do motor.
-2. Aritmética decimal com precisão e arredondamento explícitos e documentados.
-3. Memória de cálculo por item; erro por item, não falha global.
-4. Execução local e rastreável.
+**Achado de vigência:** o clone estava defasado (6 commits; releases 1.7.2 e 1.7.3) e o **ADR003 foi reescrito em 17/11/2026**. O princípio que o toolkit citava ("aritmética decimal precisa") segue verdadeiro, mas o conteúdo mudou e é mais específico. Registro atualizado em `docs/SOURCES.md` e `references/sources.md`.
 
-A RTC cobre CBS/IBS/IS (consumo) e **não** encargos de folha; o toolkit não deve misturá-los (já registrado em `SOURCES.md`).
-Validade das referências: o clone local tem último commit em 2026-10-22; a atualização (`git pull`) e a conferência de vigência em fonte oficial ficam pendentes e **exigem rede** (T-010).
+| Tema | O que a RTC faz (fonte) | Toolkit hoje | Ação |
+|---|---|---|---|
+| Arredondamento | Conta interna exata; **um** arredondamento por número publicado; modo único `HALF_EVEN` "convenção do projeto; não há dispositivo legal que fixe o modo"; classe única protegida por teste de arquitetura e SHA-256; somas sobre os valores publicados (ADR003) | v0.1.x só soma/subtrai valores de 2 casas: **nenhum arredondamento** (verificado, T-005) | v0.2.0: ao entrarem alíquotas, módulo único de arredondamento, modo declarado **por regra**, nunca presumido como exigência legal; teste de arquitetura "sem arredondamento fora do módulo"; definir por regra se o valor publicado alimenta a conta seguinte (D-008) |
+| Erro por item | Erros estruturados (tipo, campo, detalhe); item com erro sai do total "sem aviso explícito no nível da operação" (ADR010) | `reason`+`field` (T-004); `coverage` e `limitations` declaram exclusões | Já atende e é mais explícito; manter |
+| Regras em dados | Expressões JEXL no banco, com sandbox (ADR001) | — | v0.2.0 M1: regras declarativas versionadas; **não** avaliar expressões arbitrárias (superfície de ataque); fórmulas nomeadas e parametrizadas (D-009) |
+| Versionamento e vigência | Scripts `B####`/`V####` com checksum; registro obrigatório de versão da base; vigência por colunas de data início/fim (ADR009, `flyway/sql`) | Esquema de regra prevê versão, vigência e histórico (`RULE-REGISTRY.md`) | M1: carregador rejeita regra sem versão, vigência ou histórico; testes de vigência por data |
+| Memória de cálculo | Texto livre por tributo (`cbs`, `ibsUF`, `ibsMun`) | `calculation` estruturado e recomputável (T-005) | Superior em verificabilidade; manter |
+
+Escopo: a RTC cobre CBS/IBS/IS (consumo) e **não** encargos de folha; não é base de cálculo para INSS/IRRF/FGTS.
 
 ## 6. Divergência verificada: skill instalada vs. repositório
 
@@ -70,10 +74,10 @@ Conteúdo idêntico ao do repositório; difere apenas o fim de linha (CRLF na c�
 
 ## 7. Pendências da Fase 1
 
-- Reproduzir A-01 dentro do sandbox do Codex (feito pelo Implementador em T-001).
-- Leitura completa dos ADRs e de `flyway/sql` da RTC (T-010).
-- Validar que os links de `docs/SOURCES.md` e `references/sources.md` continuam acessíveis (requer rede; T-010).
-- Revisão completa de `docs/*.md`, `SECURITY.md`, `CONTRIBUTING.md` e licenças (T-008).
+- ~~Reproduzir A-01 no sandbox do Codex~~ — não reproduzido pelo Codex; dependência removida (T-001).
+- ~~Leitura dos ADRs e de `flyway/sql` da RTC~~ — feita (seção 5; T-010).
+- Links de `docs/SOURCES.md` e demais documentos: 14 de 16 verificados (HTTP 200; GitHub ADR001/003 deram 503 e passaram no retry). **Os 2 links do Planalto (CLT, LGPD) não responderam desta máquina** (timeout de 25 s e 60 s, inclusive a página inicial): **não verificados**, não necessariamente inválidos. O registro afirma "verified 2026-11-27" para a LGPD; essa verificação **não foi reproduzida** aqui.
+- Revisão completa de `README*`, `SECURITY.md`, `CONTRIBUTING.md`, `INSTALL.md` e licenças (T-008, pendente).
 
 ## 8. Conclusão
 

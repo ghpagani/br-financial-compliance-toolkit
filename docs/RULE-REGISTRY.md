@@ -6,7 +6,7 @@ Distinção obrigatória de **tipo**: `legal` (norma), `contratual`, `institucio
 ## Esquema obrigatório de regra executável (Fase 4)
 
 Campos: `id`, `descricao`, `categoria`, `tipo`, `fonte_primaria_oficial`, `dispositivo_normativo`, `data_publicacao`, `vigencia_inicio`, `vigencia_fim`, `condicoes`, `excecoes`, `formula`, `arredondamento`, `versao`, `casos_de_teste`, `status_validacao` (`draft` · `em_validacao` · `validada_profissionalmente` · `obsoleta`), `historico`.
-Uma regra legal só pode ser usada operacionalmente com `status_validacao = validada_profissionalmente`, registrando o revisor e a data. Antes disso é apenas rascunho.
+O campo `arredondamento` é obrigatório e **por regra** (modo, casas, momento — ver DECISIONS D-008); nenhum modo é presumido. Uma regra legal só pode ser usada operacionalmente com `status_validacao = validada_profissionalmente`, registrando o revisor e a data. Antes disso é apenas rascunho.
 
 ## Regras vigentes (v0.1.0)
 
