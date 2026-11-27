@@ -51,7 +51,7 @@ class CalculationTests(unittest.TestCase):
                 difference = values['matched_paid'] - values['approved']
             self.assertEqual(difference, Decimal(finding['difference']))
             if code == 'BUDGET_OVER':
-                self.assertEqual(calc['comparison'], 'actual > expected + tolerance')
+                self.assertEqual(calc['comparison'], 'matched_paid > approved + tolerance')
                 self.assertGreater(values['matched_paid'], values['approved'] + tolerance)
             else:
                 self.assertEqual(calc['comparison'], 'abs(difference) > tolerance')

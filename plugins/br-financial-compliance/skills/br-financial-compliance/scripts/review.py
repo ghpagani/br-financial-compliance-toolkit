@@ -3,6 +3,7 @@
 import argparse
 import calendar
 import csv
+import html
 import json
 import os
 import re
@@ -29,7 +30,53 @@ CALCULATION_RULES = {
     'EXP_PAYMENT_DIFF': ('difference = paid - gross', 'abs(difference) > tolerance'),
     'PAY_NET_DIFF': ('difference = net - (gross - deductions)', 'abs(difference) > tolerance'),
     'PAY_PAID_DIFF': ('difference = paid - net', 'abs(difference) > tolerance'),
-    'BUDGET_OVER': ('difference = matched_paid - approved', 'actual > expected + tolerance'),
+    'BUDGET_OVER': ('difference = matched_paid - approved', 'matched_paid > approved + tolerance'),
+}
+MESSAGES = {
+    'en': {
+        'findings': {
+            'INPUT_INVALID': 'Invalid, unsupported or out-of-period input; verify schema and coverage.',
+            'BUDGET_OVERLAP': 'Overlapping budget periods; matching disabled for this project/category.',
+            'EXP_PAYMENT_DIFF': 'Gross versus paid differs; verify retention, installments or credits.',
+            'EXP_DOCUMENT': 'Evidence not confirmed; request supporting document.',
+            'EXP_APPROVAL': 'Approval not confirmed; verify authorization.',
+            'EXP_BUDGET_UNMATCHED': 'No unique applicable budget; excluded from budget totals.',
+            'EXP_POSSIBLE_DUPLICATE': 'Repeated vendor/invoice reference; verify installments, splits or duplicate payment.',
+            'EXP_POSSIBLE_DUPLICATE_AMOUNT': 'Same vendor, payment amount and date with different invoice references; verify installments, splits or duplicate payment.',
+            'PAY_NET_DIFF': 'Reported net differs from gross less reported deductions; not a statutory calculation.',
+            'PAY_PAID_DIFF': 'Reported net versus paid differs; reconcile payment.',
+            'PAY_APPROVAL': 'Approval not confirmed.',
+            'PAY_REPEAT': 'Repeated employee/competence; verify separate payroll runs or duplicate payments.',
+            'BUDGET_OVER': 'Matched cash payments exceed supplied budget.',
+        },
+        'scope': 'Arithmetic and supplied-policy checks only. No statutory, fraud or audit opinion.',
+        'rounding': ROUNDING_POLICY,
+        'basis': 'cash paid from supplied expense rows only',
+        'limitations': ['Processed totals include flagged rows and exclude invalid rows; not certified totals.', 'Budget coverage is limited to supplied cash expense records; payroll is not included.', 'Input flags are assertions, not document authentication.', 'No bank reconciliation, legal tax rates, statutory payroll or payment execution.'],
+        'labels': {'title':'Financial review', 'version':'Tool version', 'policy':'Policy', 'source':'Source', 'period':'Period', 'scope':'Scope', 'coverage':'Coverage', 'totals':'Totals', 'findings':'Findings', 'budgets':'Budgets', 'limitations':'Limitations', 'pending':'Reviewer decision pending.', 'row':'Row', 'module':'Module', 'code':'Code', 'severity':'Severity', 'message':'Message', 'expected':'Expected', 'actual':'Actual', 'difference':'Difference', 'approved':'Approved', 'matched_paid':'Matched paid', 'remaining':'Remaining', 'basis':'Basis', 'measure':'Measure', 'value':'Value'},
+    },
+    'pt-BR': {
+        'findings': {
+            'INPUT_INVALID': 'Entrada inválida, não suportada ou fora do período; verifique o formato e a cobertura.',
+            'BUDGET_OVERLAP': 'Períodos orçamentários sobrepostos; associação desabilitada para este projeto e categoria.',
+            'EXP_PAYMENT_DIFF': 'Valor bruto e pago diferem; verifique retenções, parcelas ou créditos.',
+            'EXP_DOCUMENT': 'Comprovante não confirmado; solicite o documento de suporte.',
+            'EXP_APPROVAL': 'Aprovação não confirmada; verifique a autorização.',
+            'EXP_BUDGET_UNMATCHED': 'Não há orçamento aplicável único; excluído dos totais orçamentários.',
+            'EXP_POSSIBLE_DUPLICATE': 'Referência de fornecedor e documento repetida; verifique parcelas, rateios ou possível repetição de pagamento.',
+            'EXP_POSSIBLE_DUPLICATE_AMOUNT': 'Mesmo fornecedor, valor pago e data com referências de documento diferentes; verifique parcelas, rateios ou possível repetição de pagamento.',
+            'PAY_NET_DIFF': 'Líquido informado difere do bruto menos descontos informados; não é cálculo legal.',
+            'PAY_PAID_DIFF': 'Líquido informado e valor pago diferem; concilie o pagamento.',
+            'PAY_APPROVAL': 'Aprovação não confirmada.',
+            'PAY_REPEAT': 'Pessoa e competência repetidas; verifique processamentos separados ou possível repetição de pagamento.',
+            'BUDGET_OVER': 'Pagamentos associados superam o orçamento informado.',
+        },
+        'scope': 'Somente verificações aritméticas e da política informada. Não constitui parecer legal ou de auditoria.',
+        'rounding': 'Sem arredondamento; entrada limitada a duas casas decimais, aritmética Decimal exata.',
+        'basis': 'somente despesas pagas informadas',
+        'limitations': ['Totais processados incluem linhas sinalizadas e excluem linhas inválidas; não são totais certificados.', 'Cobertura orçamentária limitada às despesas pagas informadas; não inclui folha.', 'Indicadores são declarações, não autenticação de documentos.', 'Não há conciliação bancária, alíquotas legais, folha legal ou execução de pagamentos.'],
+        'labels': {'title':'Revisão financeira', 'version':'Versão da ferramenta', 'policy':'Política', 'source':'Fonte', 'period':'Período', 'scope':'Escopo', 'coverage':'Cobertura', 'totals':'Totais', 'findings':'Achados', 'budgets':'Orçamentos', 'limitations':'Limitações', 'pending':'Decisão do revisor pendente.', 'row':'Linha', 'module':'Módulo', 'code':'Código', 'severity':'Severidade', 'message':'Mensagem', 'expected':'Esperado', 'actual':'Real', 'difference':'Diferença', 'approved':'Aprovado', 'matched_paid':'Pago associado', 'remaining':'Saldo', 'basis':'Base', 'measure':'Indicador', 'value':'Valor', 'expense_rows':'Linhas de despesas', 'expense_processed':'Despesas processadas', 'payroll_rows':'Linhas de folha', 'payroll_processed':'Folhas processadas', 'budget_rows':'Linhas de orçamento', 'budget_evaluated':'Orçamentos avaliados', 'budget_unmatched_expenses':'Despesas sem orçamento associado', 'expense_paid_processed':'Despesas pagas processadas', 'payroll_paid_processed':'Folha paga processada', 'expense_paid_matched_to_budget':'Despesas pagas associadas ao orçamento'},
+    },
 }
 
 
@@ -118,13 +165,14 @@ def policy_load(path):
     return p
 
 
-def review(expenses, payroll, budgets, policy):
+def review(expenses, payroll, budgets, policy, language='en'):
     with localcontext() as ctx:
         ctx.prec = 40
-        return _review(expenses, payroll, budgets, policy)
+        return _review(expenses, payroll, budgets, policy, language)
 
 
-def _review(expenses, payroll, budgets, policy):
+def _review(expenses, payroll, budgets, policy, language):
+    messages = MESSAGES[language]
     findings = []
     results = []
     start, end = iso(policy['effective_from']), iso(policy['effective_to'])
@@ -133,18 +181,18 @@ def _review(expenses, payroll, budgets, policy):
     budget_defs = defaultdict(list)
     eligible_expenses = []
     excluded_expense_rows = []
-    def add(kind, row, code, severity, message, expected=None, actual=None, operands=None):
-        f = dict(module=kind, row=row, code=code, severity=severity, message=message, rule_version=policy['version'])
+    def add(kind, row, code, severity, expected=None, actual=None, operands=None):
+        f = dict(module=kind, row=row, code=code, severity=severity, message=messages['findings'][code], rule_version=policy['version'])
         if expected is not None:
             f.update(expected=str(expected), actual=str(actual), difference=str(actual-expected))
             formula, comparison = CALCULATION_RULES[code]
             f['calculation'] = {'formula': formula,
                 'operands': {name: str(value) for name, value in operands.items()},
-                'tolerance': str(tol), 'comparison': comparison, 'rounding': ROUNDING_POLICY}
+                'tolerance': str(tol), 'comparison': comparison, 'rounding': messages['rounding']}
         findings.append(f)
     def invalid(kind, n, exc):
         # Do not include arbitrary input or exception text in reports.
-        add(kind,n,'INPUT_INVALID','BLOCKER','Invalid, unsupported or out-of-period input; verify schema and coverage.')
+        add(kind,n,'INPUT_INVALID','BLOCKER')
         findings[-1]['reason'] = exc.reason if isinstance(exc, InputError) else 'MALFORMED_ROW'
         if isinstance(exc, InputError) and exc.field is not None:
             findings[-1]['field'] = exc.field
@@ -173,7 +221,7 @@ def _review(expenses, payroll, budgets, policy):
         for a,b,limit,n in ordered:
             if max_end is not None and a<=max_end:
                 overlaps.add(key)
-                add('budgets',n,'BUDGET_OVERLAP','BLOCKER','Overlapping budget periods; matching disabled for this project/category.')
+                add('budgets',n,'BUDGET_OVERLAP','BLOCKER')
             max_end=b if max_end is None else max(max_end,b)
     ids=Counter(r.get('id') for r in expenses)
     payroll_ids=Counter(r.get('id') for r in payroll)
@@ -193,14 +241,14 @@ def _review(expenses, payroll, budgets, policy):
             invoice_groups[(vendor,invoice)].append(n)
             amount_groups[(vendor,paid,day)].append((n,invoice))
             if abs(gross-paid)>tol:
-                add('expenses',n,'EXP_PAYMENT_DIFF','REVIEW','Gross versus paid differs; verify retention, installments or credits.',gross,paid,{'gross':gross,'paid':paid})
+                add('expenses',n,'EXP_PAYMENT_DIFF','REVIEW',gross,paid,{'gross':gross,'paid':paid})
             if policy['require_document'] and r['document']!='yes':
-                add('expenses',n,'EXP_DOCUMENT','REVIEW','Evidence not confirmed; request supporting document.')
+                add('expenses',n,'EXP_DOCUMENT','REVIEW')
             if policy['require_approval'] and r['approval']!='yes':
-                add('expenses',n,'EXP_APPROVAL','REVIEW','Approval not confirmed; verify authorization.')
+                add('expenses',n,'EXP_APPROVAL','REVIEW')
             matched=[(a,b,limit,j) for a,b,limit,j in budget_defs.get(key,[]) if a<=day<=b]
             if key in overlaps or len(matched)!=1:
-                add('expenses',n,'EXP_BUDGET_UNMATCHED','REVIEW','No unique applicable budget; excluded from budget totals.')
+                add('expenses',n,'EXP_BUDGET_UNMATCHED','REVIEW')
             else:
                 spend[matched[0][3]]+=paid
             results.append({'module':'expenses','row':n,'processed':True})
@@ -208,11 +256,11 @@ def _review(expenses, payroll, budgets, policy):
             invalid('expenses',n,exc); excluded_expense_rows.append(n); results.append({'module':'expenses','row':n,'processed':False})
     for group in invoice_groups.values():
         if len(group)>1:
-            for n in group: add('expenses',n,'EXP_POSSIBLE_DUPLICATE','REVIEW','Repeated vendor/invoice reference; verify installments, splits or duplicate payment.')
+            for n in group: add('expenses',n,'EXP_POSSIBLE_DUPLICATE','REVIEW')
     for group in amount_groups.values():
         if len({invoice for _, invoice in group}) > 1:
             for n, invoice in group:
-                add('expenses',n,'EXP_POSSIBLE_DUPLICATE_AMOUNT','REVIEW','Same vendor, payment amount and date with different invoice references; verify installments, splits or duplicate payment.')
+                add('expenses',n,'EXP_POSSIBLE_DUPLICATE_AMOUNT','REVIEW')
     payroll_paid=[]
     for index,r in enumerate(payroll,2):
         n = getattr(r, 'line', index)
@@ -226,34 +274,72 @@ def _review(expenses, payroll, budgets, policy):
             if deductions>gross: raise InputError('INVALID_PAYROLL','deductions')
             payroll_paid.append(paid); payroll_groups[(emp,r['period'])].append(n)
             expected=gross-deductions
-            if abs(expected-net)>tol: add('payroll',n,'PAY_NET_DIFF','REVIEW','Reported net differs from gross less reported deductions; not a statutory calculation.',expected,net,{'gross':gross,'deductions':deductions,'net':net})
-            if abs(net-paid)>tol: add('payroll',n,'PAY_PAID_DIFF','REVIEW','Reported net versus paid differs; reconcile payment.',net,paid,{'net':net,'paid':paid})
-            if policy['require_approval'] and r['approval']!='yes': add('payroll',n,'PAY_APPROVAL','REVIEW','Approval not confirmed.')
+            if abs(expected-net)>tol: add('payroll',n,'PAY_NET_DIFF','REVIEW',expected,net,{'gross':gross,'deductions':deductions,'net':net})
+            if abs(net-paid)>tol: add('payroll',n,'PAY_PAID_DIFF','REVIEW',net,paid,{'net':net,'paid':paid})
+            if policy['require_approval'] and r['approval']!='yes': add('payroll',n,'PAY_APPROVAL','REVIEW')
             results.append({'module':'payroll','row':n,'processed':True})
         except (ValueError,TypeError,KeyError,InvalidOperation) as exc:
             invalid('payroll',n,exc); results.append({'module':'payroll','row':n,'processed':False})
     for group in payroll_groups.values():
         if len(group)>1:
-            for n in group: add('payroll',n,'PAY_REPEAT','REVIEW','Repeated employee/competence; verify separate payroll runs or duplicate payments.')
+            for n in group: add('payroll',n,'PAY_REPEAT','REVIEW')
     budget_results=[]
     for key,defs in budget_defs.items():
         if key in overlaps: continue
         for a,b,limit,n in defs:
             actual=spend[n]
-            budget_results.append({'row':n,'approved':str(limit),'matched_paid':str(actual),'remaining':str(limit-actual),'basis':'cash paid from supplied expense rows only'})
-            if actual>limit+tol: add('budgets',n,'BUDGET_OVER','REVIEW','Matched cash payments exceed supplied budget.',limit,actual,{'approved':limit,'matched_paid':actual})
+            budget_results.append({'row':n,'approved':str(limit),'matched_paid':str(actual),'remaining':str(limit-actual),'basis':messages['basis']})
+            if actual>limit+tol: add('budgets',n,'BUDGET_OVER','REVIEW',limit,actual,{'approved':limit,'matched_paid':actual})
     counts=Counter(f['severity'] for f in findings)
     flagged={(f['module'],f['row']) for f in findings}
     for r in results:
         flags=(r['module'],r['row']) in flagged
         r['status']='NOT_PROCESSED' if not r['processed'] else ('REVIEW' if flags else 'NO_CONFIGURED_FINDING')
     return {'tool_version':VERSION,'policy_version':policy['version'],'policy_source':policy['source'],'policy_period':[str(start),str(end)],'currency':'BRL',
-        'rounding_policy':ROUNDING_POLICY,'decimal_context':{'precision':getcontext().prec},
-        'scope':'Arithmetic and supplied-policy checks only. No statutory, fraud or audit opinion.',
+        'language':language,'rounding_policy':messages['rounding'],'decimal_context':{'precision':getcontext().prec},
+        'scope':messages['scope'],
         'coverage':{'expense_rows':len(expenses),'expense_processed':len(eligible_expenses),'payroll_rows':len(payroll),'payroll_processed':len(payroll_paid),'budget_rows':len(budgets),'budget_evaluated':len(budget_results),'budget_unmatched_expenses':sum(f['code']=='EXP_BUDGET_UNMATCHED' for f in findings)},
         'totals':{'expense_paid_processed':str(sum((p for _,p in eligible_expenses),ZERO)),'payroll_paid_processed':str(sum(payroll_paid,ZERO)),'expense_paid_matched_to_budget':str(sum(spend.values(),ZERO))},
         'findings_by_severity':dict(counts),'findings':findings,'rows':results,'budgets':budget_results,
-        'limitations':['Processed totals include flagged rows and exclude invalid rows; not certified totals.','Budget coverage is limited to supplied cash expense records; payroll is not included.','Input flags are assertions, not document authentication.','No bank reconciliation, legal tax rates, statutory payroll or payment execution.']}
+        'limitations':list(messages['limitations'])}
+
+
+def markdown_escape(value):
+    # Encode Markdown metacharacters after HTML escaping, before building tables.
+    text = html.escape(str(value), quote=True)
+    text = re.sub(r'[\r\n\x00-\x1f\x7f]+', ' ', text)
+    for char, entity in {'|':'&#124;', '`':'&#96;', '[':'&#91;', ']':'&#93;',
+                         '(':'&#40;', ')':'&#41;', '\\':'&#92;'}.items():
+        text = text.replace(char, entity)
+    return text
+
+
+def markdown_report(report):
+    labels = MESSAGES[report['language']]['labels']
+    e = markdown_escape
+    lines = [f"# {labels['title']}", '',
+        f"- {labels['version']}: {e(report['tool_version'])}",
+        f"- {labels['policy']}: {e(report['policy_version'])}",
+        f"- {labels['source']}: {e(report['policy_source'])}",
+        f"- {labels['period']}: {e(report['policy_period'][0])} — {e(report['policy_period'][1])}",
+        f"- {labels['scope']}: {e(report['scope'])}", '']
+
+    def table(title, columns, rows):
+        lines.extend([f'## {title}', '', '| ' + ' | '.join(e(labels[c]) for c in columns) + ' |',
+                      '| ' + ' | '.join('---' for _ in columns) + ' |'])
+        for row in rows:
+            lines.append('| ' + ' | '.join(e(row.get(c, '')) for c in columns) + ' |')
+        lines.append('')
+
+    for key in ('coverage', 'totals'):
+        table(labels[key], ['measure', 'value'],
+              [{'measure': labels.get(k, k), 'value': v} for k, v in report[key].items()])
+    table(labels['findings'], ['row','module','code','severity','message','expected','actual','difference'], report['findings'])
+    table(labels['budgets'], ['row','approved','matched_paid','remaining','basis'], report['budgets'])
+    lines.extend([f"## {labels['limitations']}", ''])
+    lines.extend('- ' + e(item) for item in report['limitations'])
+    lines.extend(['', labels['pending'], ''])
+    return '\n'.join(lines)
 
 
 def main(argv=None):
@@ -261,19 +347,24 @@ def main(argv=None):
     parser.add_argument('--policy',required=True)
     for k in FIELDS: parser.add_argument('--'+k)
     parser.add_argument('--out',required=True,help='New JSON output; refuses overwrite')
+    parser.add_argument('--lang', choices=['en','pt-BR'], default='en')
+    parser.add_argument('--format', choices=['json','md'], default='json')
     args=parser.parse_args(argv)
     if not any(getattr(args,k) for k in FIELDS): parser.error('provide at least one input CSV')
     try:
         p=policy_load(args.policy)
         data={k:read_csv(getattr(args,k),k) if getattr(args,k) else [] for k in FIELDS}
-        result=review(**data,policy=p)
+        result=review(**data,policy=p,language=args.lang)
         destination = Path(args.out)
         temporary = destination.parent / ('.brfc-' + uuid4().hex + '.tmp')
         created = False
         try:
             with temporary.open('x',encoding='utf-8') as f:
                 created = True
-                json.dump(result,f,ensure_ascii=False,indent=2); f.write('\n')
+                if args.format == 'json':
+                    json.dump(result,f,ensure_ascii=False,indent=2); f.write('\n')
+                else:
+                    f.write(markdown_report(result))
             os.link(temporary, destination)
         finally:
             if created:
