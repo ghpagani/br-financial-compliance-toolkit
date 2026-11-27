@@ -26,6 +26,7 @@ Os dois worktrees compartilham o mesmo repositório Git local, então o Claude l
 | 2026-11-27 | coordenação inicial | Implementador | resposta `msg_9c1988924a3f` | `5e49d39` | Codex confirmou alinhamento da branch em `5e49d39` |
 | 2026-11-27 | T-001 | Implementador | `msg_aca8ae24b297` | `c5b9e6f` | Entregue `4655036`; aceita, integrada em `25f87b5` |
 | 2026-11-27 | T-007 | Implementador | `msg_06e351323811` | `99c9a04` | Entregue `620eb34`; aceita, integrada em `d2d94e5` |
+| 2026-11-27 | T-003 | Implementador | `msg_bd7d585725d7` | `3b1fe9a` | Enviada; aguardando entrega |
 
 (Novas linhas são adicionadas a cada `send`/entrega. Uma tarefa só consta como delegada com o ID de mensagem aqui.)
 
