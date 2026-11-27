@@ -1,0 +1,218 @@
+# Relatório de validação
+
+Registro cronológico de evidências. Só entram aqui comandos efetivamente executados.
+
+## 2026-11-27 — Base v0.1.0 (`5e49d39`), máquina do mantenedor (Windows 11, Python 3.12.10)
+
+| Verificação | Comando | Resultado |
+|---|---|---|
+| Testes unitários | `python -m unittest discover -s tests -v` | 16 testes, OK (0,049 s) |
+| Estado do Git | `git status` | limpo |
+| Sondagens de casos extremos | script no scratchpad (fora do repo), `python -I -X utf8` | ver `TECHNICAL-AUDIT.md` §4 |
+
+Não verificado nesta rodada: execução em sandbox do Codex (A-01), CI no GitHub, Ubuntu/Python 3.10, links externos.
+
+## Validações anteriores informadas pelo mantenedor (não reexecutadas por Claude)
+
+PowerShell 16 OK; GitHub Actions OK; Claude Code/Orca 16 OK; Claude Online com base fictícia (19 achados, 4 bloqueios); Codex 13 OK e 3 erros de permissão em diretório temporário.
+
+## Entregas revisadas
+
+### T-001 — testes sem temp do sistema · `4655036` (integrada em `25f87b5`)
+Escopo conferido por `git diff --stat`: `.gitignore`, `tests/support.py`, `tests/test_review.py` (3 arquivos); nenhuma asserção existente alterada; `review.py` intocado.
+
+| Verificação (árvore do Claude, pós-merge) | Resultado |
+|---|---|
+| `python -m unittest discover -s tests` | 17 testes OK (16 originais + 1 do helper) |
+| Mesmo comando com `TEMP`/`TMP` em `C:\brfc-nonexistent-xyz` | 17 OK |
+| `git status` após testes; conteúdo residual em `.test-tmp/` | limpo; 0 itens |
+| CLI da demo (`examples/`) | saída 1; totais `2850.00` / `9000.00` / `2650.00` |
+
+Ressalvas: (a) a falha de permissão original não foi reproduzida pelo Codex; (b) o helper é importado como `from support import ...`, o que funciona com `discover -s tests` (comando do CI e do projeto) mas não com `python -m unittest tests.test_review` a partir da raiz; (c) execução no sandbox do Codex com a falha original continua não comprovada.
+
+### T-007 — testes de CLI e casos extremos · `620eb34` (integrada em `d2d94e5`)
+Escopo: somente `tests/test_cli.py` (68 linhas) e `tests/test_edge_cases.py` (135 linhas); motor e testes existentes intocados (`git diff --stat`).
+
+| Verificação (árvore do Claude, pós-merge) | Resultado |
+|---|---|
+| `python -m unittest discover -s tests` | 28 testes: 27 OK + 1 `expectedFailure`; 0,6 s |
+| Com `TEMP`/`TMP` inexistentes | idem |
+| `git status`; resíduo em `.test-tmp/` | limpo; 0 itens |
+| `expectedFailure` rodado sem o decorator | falha com `AssertionError` (confirma que não mascara) |
+
+`expectedFailure` registrado: `test_csv_finding_uses_physical_line_after_multiline_record` — achados numeram registros lógicos (`[2,3]`), não linhas físicas (`[2,4]`) após campo multilinha. Corresponde ao achado B-10; correção prevista na **T-004** (o teste passa a ser normal). Observação: o contrato atual documenta "registros", então a mudança para linha física é alteração de comportamento a constar no CHANGELOG.
+
+Cobertura nova: códigos de saída 0/1/2/3 e ausência de relatório no 3; determinismo byte a byte; não-eco de entrada; limites de dinheiro/datas/vigência; tolerância (despesa, líquido e pago da folha); contrato da política; cabeçalhos e linhas malformadas; BOM, CRLF, campo vazio, só cabeçalho, multilinha; limite de 100000 linhas.
+Lacunas conhecidas: sem teste de dígitos Unicode em datas/competência (coberto só em dinheiro) e sem teste de `paid > gross` isolado; ficam para a T-004.
+
+### T-003 — exemplos dentro do plugin · `eb400ce` (integrada em `b10b3ce`)
+Escopo (`git diff -M --stat`): 4 renames 100% `examples/` → `plugins/.../skills/br-financial-compliance/examples/`; caminhos atualizados em README PT/EN, CI, `.gitignore`, `docs/DATA-CONTRACT.md`, 3 arquivos de teste; CHANGELOG (seção Unreleased); novo `tests/test_references.py`. Extra declarado pelo Codex: ajuste textual em `docs/TECHNICAL-AUDIT.md` (menção histórica virou prosa) — aceito.
+
+| Verificação (árvore do Claude, pós-merge) | Resultado |
+|---|---|
+| `python -m unittest discover -s tests` (normal e com `TEMP`/`TMP` inexistentes) | 29 testes: 28 OK + 1 `expectedFailure` (o de T-004) |
+| `git ls-files \| grep examples` | 4 arquivos, só no novo local; `examples/` da raiz não existe |
+| SHA-256 dos 4 arquivos, v0.1.0 vs atual (ignorando fim de linha) | idênticos |
+| Mutação: acrescentar ao README a citação de um CSV inexistente na pasta de exemplos da skill | `test_references` falha apontando o arquivo e a referência; README restaurado, árvore limpa |
+| Comando de demonstração copiado do README, executado da raiz | saída 1; totais `2850.00` / `9000.00` / `2650.00` |
+
+Ressalvas: o comando de demonstração ficou longo (caminho completo do plugin); o `.gitignore` agora tem exceção específica ao caminho novo (um CSV novo em outro lugar continua ignorado, como desejado). `python -m unittest tests.test_references` (módulo a partir da raiz) falha por import, igual à ressalva da T-001; o comando oficial é `discover -s tests`.
+
+### T-002 — build reprodutível e validação do plugin · `603a667` (integrada em `fc545f1`)
+Escopo (`git diff --stat`): `scripts/build_release.py` (84 linhas), `scripts/validate_plugin.py` (86), `tests/test_packaging.py` (76), `.github/workflows/tests.yml`, `.gitignore` (`dist/`). Nenhum arquivo fora do previsto; motor, testes anteriores e exemplos intocados. Só biblioteca padrão.
+
+| Verificação (árvore do Claude, pós-merge) | Resultado |
+|---|---|
+| `python -m unittest discover -s tests` (normal e `TEMP`/`TMP` inexistentes) | 31 testes: 30 OK + 1 `expectedFailure` (T-004) |
+| `python scripts/validate_plugin.py` | saída 0 |
+| Build duplo em `dist/a` e `dist/b` | `SHA256SUMS` idênticos; skill `cdd1d4a7…db602`, plugin `0045a693…681e2` |
+| Hashes do Claude vs. hashes informados pelo Codex (outra worktree) | idênticos |
+| Segundo build no mesmo destino | falha (`Output already exists`), saída 1, nada alterado |
+| Conteúdo dos ZIPs | skill 11 arquivos, plugin 14; datas fixas 2026-01-01, permissões 0644; sem CRLF; sem `__pycache__`/`.pyc`/`demo-report`/`reports`; skill com `examples/` |
+| ZIP da skill extraído, demo executada com os exemplos extraídos | saída 1; totais `2850.00` / `9000.00` / `2650.00` |
+| `git status`, `dist/` removido | limpo |
+
+**Não verificado:** o CI hospedado (matriz Ubuntu/Windows × Python 3.10/3.12) — o workflow foi escrito, não executado; não há alegação de aprovação. Python 3.10 não foi exercitado localmente (só 3.12).
+**Limites conhecidos:** (1) a igualdade de hash comprova reprodutibilidade na mesma versão de zlib; ZIPs gerados em máquinas com zlib diferente podem divergir nos bytes comprimidos mesmo com conteúdo idêntico — o CI só compara dois builds no mesmo runner; (2) o build lê a árvore de trabalho dos arquivos versionados, então alterações locais não commitadas entram no ZIP; (3) `validate_plugin.py` só checa referências entre crases em `SKILL.md` e `references/*.md`.
+
+### T-004 — endurecimento do motor · `62b6b1f` (integrada em `7fd5aa7`)
+Escopo (`git diff --stat`): `review.py` (+166/−63 linhas aprox.), `tests/test_hardening.py` (novo, 117), `tests/test_edge_cases.py` (só remoção do `expectedFailure`), CHANGELOG (1 linha), `docs/DATA-CONTRACT.md`, `references/data-contract.md`, `references/controls.md`, `docs/RULE-REGISTRY.md`. Nada fora do permitido. Leitura integral do diff de `review.py` feita antes de rodar.
+
+| Verificação (árvore do Claude, pós-merge) | Resultado |
+|---|---|
+| `discover -s tests` (normal e `TEMP`/`TMP` inexistentes) | 40 testes OK, 0 `expectedFailure` |
+| `validate_plugin.py` | saída 0 |
+| **Teste diferencial** motor antigo `b26cdd6` × novo, `review()`, 6000 entradas aleatórias (maioria inválida; 401 linhas válidas) | 0 divergências |
+| Idem, modo enviesado a linhas válidas com pools pequenos, 6000 entradas | 0 divergências; 32101 linhas válidas processadas; os 13 códigos de achado exercitados; regra nova em 808 casos (1809 achados) |
+| Diferencial de `read_csv`, 3000 arquivos sintéticos (BOM, CRLF, linhas em branco, curtas, longas, aspas, aspas abertas, cabeçalhos inválidos) sem multilinha | 0 divergências (1343 ok nos dois, 1657 erro nos dois) |
+| JSON da demo, motor antigo × novo | idêntico byte a byte (5026 bytes) |
+| CLI: saída relativa; sobrescrita; diretório inexistente; entrada inválida; pasta com espaço | exit 1 / 3 / 3 / 3 / 1; original preservado; nenhum arquivo parcial nem `.brfc-*.tmp` restante |
+| Desempenho, 100000 linhas | leitura 0,25→0,23 s; revisão 0,63→~0,80 s (+~25%), aceito |
+
+Diferencial: o que foi descontado da comparação (aditivo por desenho): chaves `reason`/`field` nos achados `INPUT_INVALID`, achados `EXP_POSSIBLE_DUPLICATE_AMOUNT` e o status das linhas sinalizadas só por ela. Todo o resto (achados, severidades, totais, cobertura, orçamentos, limitações) foi comparado integralmente.
+
+**Reasons observados** nas execuções: CURRENCY, DUPLICATE_ID, INVALID_AMOUNT, INVALID_BUDGET_DATES, INVALID_DATE, INVALID_FLAG, INVALID_PAYROLL, INVALID_REFERENCE, MALFORMED_ROW, OUT_OF_PERIOD. `PARTIAL_COMPETENCE` só é coberto por teste unitário (exige vigência terminando no meio do mês). `HEADER` existia no conjunto fechado mas era **inalcançável** (cabeçalho inválido aborta com saída 3); removido na T-005.
+
+**Mudança de comportamento (registrada no CHANGELOG):** `row` passa a ser a linha física de início do registro; idêntico ao anterior em CSV sem campo multilinha (provado pelo diferencial de `read_csv`).
+
+**Ressalvas e riscos conhecidos:**
+1. A publicação usa `os.link`: falha fechada (saída 3, nada gravado) em volumes sem hard link (FAT/exFAT, muitos compartilhamentos de rede, unidades virtuais de nuvem). Intencional (evita arquivo parcial); falta documentar em INSTALL/README (T-008). Não testado em volume sem hard link.
+2. Se `os.unlink` do temporário falhasse *depois* do `os.link` bem-sucedido, o relatório existiria com saída 3 e um `.brfc-*.tmp` restante. Improvável; não reproduzido.
+3. `EXP_POSSIBLE_DUPLICATE_AMOUNT`: num grupo com notas {A, A, B} todas as 3 linhas são sinalizadas, inclusive o par A-A que já tem `EXP_POSSIBLE_DUPLICATE` (ruído, não erro).
+4. Python 3.10 não exercitado localmente; CI hospedado não executado.
+
+### T-005 — memória de cálculo estruturada · `39d38f3` (integrada em `d7da3d3`)
+Escopo (`git diff --stat`): `review.py` (+26/−7), `tests/test_calculation.py` (novo, 78), `docs/DATA-CONTRACT.md`, `docs/RULE-REGISTRY.md`, `references/data-contract.md`, CHANGELOG. Nada fora do permitido. Diff de `review.py` lido integralmente.
+
+| Verificação (árvore do Claude, pós-merge) | Resultado |
+|---|---|
+| `discover -s tests` (normal e `TEMP`/`TMP` inexistentes); `validate_plugin.py` | 43 testes OK; saída 0 |
+| **Verificação independente da aritmética** (script próprio, semente fixa): identidade de `money()`/`quantize` em 20000 valores | OK |
+| Soma de 100000 valores (até 99999999999999.99) em `Decimal` × soma exata em `Fraction` | idênticas (total 5686779699212227365.39) |
+| `99999999999999.99 + 0.01` | `100000000000000.00`, exato |
+| Recomputação de `calculation` em 4000 cenários: 7330 `EXP_PAYMENT_DIFF`, 4757 `PAY_NET_DIFF`, 4144 `PAY_PAID_DIFF`, 2524 `BUDGET_OVER` | 0 divergências em `difference` e na regra de comparação; nenhum texto de entrada em `calculation`; `calculation` só nos achados com valores |
+| Diferencial motor antigo × novo (12000 entradas, 2 modos) + 3000 CSVs, descontando `reason`/`field`/regra nova/`calculation`/chaves da raiz | 0 divergências |
+| Demo: antigo × atual (recursivo) | só adições: `$.rounding_policy`, `$.decimal_context`, `$.findings[0,6,7,9].calculation`; nenhuma remoção ou valor alterado |
+
+A afirmação "nenhum arredondamento; entrada com até 2 casas; aritmética Decimal exata" foi **verificada**, não presumida: vale enquanto as somas couberem na precisão 40 (máx. 14 dígitos inteiros × 100000 linhas ≈ 20 dígitos).
+**Imprecisão aceita e a corrigir na T-006:** o `comparison` de `BUDGET_OVER` diz `actual > expected + tolerance`, nomes que não são operandos daquele cálculo (`approved`, `matched_paid`). Não afeta valores nem decisão.
+
+### T-010 — referências oficiais · 2026-11-27 (Claude, com acesso à rede)
+| Verificação | Resultado |
+|---|---|
+| `git fetch` + `git pull --ff-only` no clone da RTC (árvore limpa antes; nada executado, sem `mvnw`) | `150cccb` (2026-10-22) → `0d4b073` (2026-11-26), 6 commits, tags 1.7.2 e 1.7.3 |
+| ADRs alterados upstream | ADR003 reescrito (+132 linhas, 17/11/2026), ADR005 editado, ADR011 novo, índice |
+| Leitura integral | ADR001, 003, 007, 009, 010; estrutura de `flyway/sql` e `MemoriaCalculoDomain` — ver `TECHNICAL-AUDIT.md` §5 |
+| Links de `docs/SOURCES.md`, `references/sources.md`, README PT/EN, SECURITY, CONTRIBUTING, INSTALL (16 URLs únicas, `curl`, sem enviar dados do projeto) | 14 com HTTP 200 (GitHub ADR001/003 deram 503 na 1ª tentativa e 200 no retry) |
+| Planalto (CLT `del5452`, LGPD `l13709`) | **Sem resposta**: timeout em 25 s e 60 s, inclusive na página inicial; IP resolvido. **Não verificado** (pode ser bloqueio de rede local). O registro diz "verified 2026-11-27" para a LGPD: **não reproduzido** nesta máquina |
+
+Mudanças de documentação decorrentes: `docs/SOURCES.md` e `references/sources.md` (commit e data da referência; ADR003 reescrito), `TECHNICAL-AUDIT.md` §5/§7, `DECISIONS.md` D-008/D-009, `RULE-REGISTRY.md`, backlog (T-010, M1).
+
+### T-006 — relatórios pt-BR/en e Markdown · `112aa21` (merge `51a6a87`) — **aceita com correções (T-006b)**
+Escopo (`git diff --stat`): `review.py` (+143/−28 aprox.), `tests/test_localization.py` (novo, 105), `tests/test_calculation.py` (só o texto de `comparison` de `BUDGET_OVER`, previsto), `docs/DATA-CONTRACT.md`, `references/data-contract.md`, `templates/review-report.md`, CHANGELOG. Nada fora do permitido. Diff de `review.py` lido integralmente.
+
+| Verificação (árvore do Claude, pós-merge) | Resultado |
+|---|---|
+| `discover -s tests` (normal e `TEMP`/`TMP` inexistentes); `validate_plugin.py` | 48 testes OK; saída 0 |
+| Diferencial `--lang en` JSON × motor antigo, 12000 entradas + 3000 CSVs (descontando aditivos: `reason`/`field`, regra nova, `calculation`, `rounding_policy`, `decimal_context`, `language`) | 0 divergências (as 13 mensagens em inglês preservadas) |
+| Demo: en/json, en/md, pt-BR/json, pt-BR/md | todas saída 1 (6965, 2692, 7144, 2950 bytes) |
+| Markdown pt-BR gerado 2× | bytes idênticos |
+| Termos proibidos (fraud, irregular, ilegal, crime, culpa, desvio, roubo) no texto pt-BR; campos de máquina | nenhum termo; `code`/`severity`/`module` etc. não traduzidos |
+| Catálogo × `RULE-REGISTRY.md` | coincidem (teste do Codex) |
+
+**Sondagem independente do escape de Markdown** (12 entradas adversariais em `policy.source`, script próprio):
+
+| Entrada | Resultado |
+|---|---|
+| HTML (`<img onerror>`, `<a href=javascript:>`), `[x](javascript:…)`, crase, `|` e quebras de linha, entidades literais, `# cabeçalho`, `> citação`, lista | tratados (sem HTML cru, sem quebra de tabela, sem linhas extras) |
+| URL com esquema (`http://…`, inclusive dentro de `![x](…)` e de `[ref]: …`), `www.…`, e-mail | **permanecem como autolink** em renderizadores GFM — lacuna frente ao requisito "nenhum link ativo" |
+| `*ênfase*`, `_ênfase_`, `~~riscado~~` | permanecem (formatação, risco baixo) |
+| Caracteres bidi e zero-width (`U+202E`, `U+200B`) | **passam** (permitem falsificar visualmente o texto) |
+
+Severidade: baixa a média — `policy.source` é fornecido pelo operador, mas o relatório pode ser compartilhado e renderizado. Correção na **T-006b**.
+Outras ressalvas: (a) o teste hostil do Codex não cobre URL solta, e-mail nem bidi, e a fonte hostil entra numa linha de lista, não numa tabela; (b) `scope` em pt-BR omite "fraude" que o inglês menciona ("No statutory, fraud or audit opinion"); (c) `--out` ainda diz "New JSON output"; (d) em inglês os rótulos de cobertura/totais do Markdown usam a chave crua; (e) Python 3.10 e CI hospedado não exercitados.
+
+### T-008 (parcial) — documentação, licenças e verificação de Python 3.10 · Claude
+Arquivos reescritos: `README.md`, `README.pt-BR.md` (paridade EN/PT), `docs/INSTALL.md` (bilíngue; a seção "GitHub" antiga mandava criar o repositório e fazer `git init` — obsoleta e substituída por procedimento de publicação **sujeito a autorização humana**), `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `ROADMAP.md` (bilíngues).
+
+| Verificação | Resultado |
+|---|---|
+| `discover -s tests` (inclui `test_references`, que varre os `.md` versionados atrás de caminhos de exemplos inexistentes) e `validate_plugin.py` | 48 testes OK; saída 0 |
+| Licenças: `LICENSE` da raiz, do plugin e da skill | as três idênticas (MIT, "BR Financial Compliance Toolkit contributors", 2026) |
+| Atribuição da RTC (MIT, Receita Federal) | registrada em `docs/SOURCES.md` e `references/sources.md`; o código do toolkit é Python independente e nenhum código ou tabela da RTC foi copiado (verificado na leitura de T-010); **verificação de consistência, não parecer jurídico sobre licenças** |
+| **Python 3.10 (estático)**: `ast.parse(..., feature_version=(3,10))` nos 12 arquivos `.py` versionados + busca de APIs posteriores (`tomllib`, `datetime.UTC`, `StrEnum`, `ExceptionGroup`, `except*`, `Self`, `itertools.batched`, `Path.walk`, …) | nenhum arquivo inválido na gramática 3.10; nenhuma API posterior encontrada. **Os testes NÃO foram executados no Python 3.10** (só o 3.12 está instalado; instalar outro interpretador exigiria alterar a máquina) |
+
+Correção de rumo registrada: uma primeira versão do `SECURITY.md` afirmava que o Markdown neutraliza links, ênfase e caracteres de controle; a sondagem da T-006 mostrou que isso **não** era verdade e o texto foi reescrito para o estado real (HTML, sintaxe de link e separadores de tabela escapados; URL solta, e-mail, ênfase e controle Unicode ainda não). Atualizar após aceitar a T-006b.
+Pendências da T-008: bump de versão para 0.1.1 em `review.py` e nos dois `plugin.json` (após a T-006b, para não conflitar), reverificar a afirmação do `SECURITY.md`, versão em português de `docs/DATA-CONTRACT.md`, e `docs/SOURCES.md` em PT.
+
+### T-006b — escape estrito de Markdown e ajustes de i18n · `a16982e` (merge `1b74d00`) + T-006c (Claude) `cce3b0e`
+Escopo da T-006b: `review.py` (+13/−4) e `tests/test_markdown_escape.py` (novo, 72). Nada fora do permitido; nenhuma asserção anterior alterada. Decisão registrada: `&gt;`/`&lt;`/`&amp;`/`&quot;` (entidades nomeadas) satisfazem o requisito ("nada interpretável"); a redação da especificação pedindo entidades numéricas era excessiva e foi corrigida no backlog.
+
+| Verificação (árvore do Claude) | Resultado |
+|---|---|
+| `discover -s tests` (normal e `TEMP`/`TMP` inexistentes), `validate_plugin.py` | 59 testes OK; saída 0 |
+| Diferencial do Codex: JSON `--lang en` entre `fd721ce` e `a16982e` | sem diferenças; JSON pt-BR só difere em `$.scope` (informado; não reexecutado por mim) |
+| **Minha sondagem adversarial**, os 12 casos que falharam na T-006 | todos corrigidos: URL com esquema, `www.`, e-mail, ênfase, bidi/zero-width, imagem, rodapé de referência |
+| Meus 8 casos novos (não testados pelo Codex) | 6 ok (`mailto:`/`ftp:`, `<http://…>`, lista ordenada, setext/`---`/`***`, tabela injetada, tags Unicode); **2 achados**: U+2028/U+2029 (categorias `Zl`/`Zp`) passavam crus e quebram linha em alguns visualizadores/scripts; `$…$` não escapado (renderiza fórmula no GitHub) |
+
+**T-006c (feita por Claude, não pelo Codex):** `review.py` passa a tratar `Zl`/`Zp` como espaço e a escapar `$`; o teste novo `test_line_paragraph_separators_and_math_dollar` **falha sem a correção** (`60 != 58` linhas; confirmado revertendo o arquivo) e passa com ela. Motivo de eu ter feito: correção de uma linha, Codex ocioso e eu já editava `review.py` para o bump de versão; a revisão independente fica comprometida por eu ter implementado — o teste e a sondagem são a salvaguarda.
+Pós-T-006c: 60 testes OK (também com `TEMP`/`TMP` inexistentes), `validate_plugin` 0, sondagem 19/20 sem achados (o 20º é a letra `^`, que não é metacaractere de Markdown — falso positivo do meu critério).
+Limite: a verificação inspeciona o texto gerado; **não** foi renderizado em visualizadores reais de Markdown.
+
+### Versão 0.1.1 aplicada · Claude
+`VERSION` em `review.py` e os dois `plugin.json`: `0.1.0` → `0.1.1` (só esses 3 lugares; nenhum teste fixava a versão). `validate_plugin` 0; relatório emite `tool_version: 0.1.1`; build gera `…-0.1.1.zip` (skill `d8583ab4…c50b3`, plugin `044aa840…48a69`, hashes desta árvore, antes dos commits finais — não são os hashes de uma publicação). **Nenhuma versão foi publicada**: CHANGELOG segue "Unreleased".
+`SECURITY.md` atualizado para a afirmação agora verificada (com o limite acima).
+
+### T-008 (conclusão) — contrato de dados, fontes e teste de consistência · Claude
+- `docs/DATA-CONTRACT.md` e a cópia da skill (`references/data-contract.md`): título 0.1.1; tabela dos **11 motivos de rejeição** (`reason`) com significado e `field` típico — antes o contrato citava "a fixed reason" sem listar os valores; resumo em português.
+- `docs/SOURCES.md` e `references/sources.md`: **corrigida uma afirmação não reproduzida** — a LGPD (Planalto) constava como "verified 2026-11-27"; nesta máquina o Planalto não responde (timeout), então passou a "unverified"; CLT idem; texto em português acrescentado. eSocial segue "verified" (HTTP 200 reproduzido).
+- Novo `tests/test_contract_docs.py`: (1) os motivos documentados nas duas cópias do contrato = `REASONS` do motor; (2) as duas cópias do contrato diferem só na linha do caminho da política.
+
+| Verificação | Resultado |
+|---|---|
+| `discover -s tests` (normal e `TEMP`/`TMP` inexistentes) | 62 testes OK |
+| Mutação 1: remover o motivo `CURRENCY` do contrato | os 2 testes novos falham |
+| Mutação 2: editar uma linha da cópia da skill | o teste de cópias falha |
+| `validate_plugin.py`; docs sem caracteres de controle | saída 0; ok |
+
+## Verificação final da v0.1.1 — clone limpo · 2026-11-27 (Claude)
+Método: `git clone --local --branch ghpagani/br-financial-compliance-toolkit` para um diretório novo e profundo (111 caracteres), sem arquivos não rastreados; HEAD `9c04f00`; Windows 11, Python 3.12.10.
+
+| Verificação | Resultado |
+|---|---|
+| `python -m unittest discover -s tests` | **62 testes OK**, 0 falhas, 0 `expectedFailure` |
+| Idem com `TEMP`/`TMP` apontando para diretório inexistente | 62 OK |
+| `python scripts/validate_plugin.py` | passou |
+| `git status` após os testes | 0 itens (nada residual) |
+| `git diff --check 5e49d39..HEAD` | limpo (após remover 2 linhas em branco finais minhas) |
+| Build duplo (`build_release.py`, dois diretórios de saída) | `SHA256SUMS` idênticos |
+| Hashes em 2 clones feitos em momentos diferentes (antes e depois do ajuste de testes) | idênticos: skill `60835c2b38288b7ba5531bd2f7a70457513d33a648bfceebf0c79f8a62f6bba5`, plugin `48ff76265fb60456954fedc7c47eb13feb00b699dfd6a4c2170473dfa44c55f7` (`…-0.1.1.zip`) |
+| ZIP da skill extraído, demo em en/json, en/md, pt-BR/json, pt-BR/md | 4× saída 1; `tool_version` 0.1.1; totais `2850.00` / `9000.00` / `2650.00` |
+| ZIP do plugin extraído, demo pt-BR/md | saída 1; relatório em português |
+| Varredura dos arquivos rastreados: CPF, e-mails reais, padrões de chave/segredo | nada encontrado |
+| Mudança total vs. v0.1.0 (`5e49d39`) | 42 arquivos, +1983/−124, 42 commits na branch de integração |
+
+**Defeito encontrado por esta verificação:** `test_validator_rejects_version_mismatch_in_copy` falhava com `WinError 3` (caminho > 260) porque copiava `__pycache__` para um diretório temporário de nome longo; **só aparecia em caminho profundo e não na minha árvore de trabalho**. Corrigido (cópia sem `__pycache__`; nome curto do diretório) e reverificado no mesmo cenário. Este é o motivo de a verificação final ser feita em clone limpo.
+
+**Não verificado (limites declarados):** CI do GitHub Actions (nunca executado); testes em Python 3.10 (só verificação estática de sintaxe/APIs) e em Linux/macOS; renderização do Markdown em visualizadores reais; comportamento em volume sem hard link; os 2 links do Planalto; instalação real da skill/plugin em Claude Code e Codex (manifestos de marketplace seguem experimentais); a falha original dos 3 testes no sandbox do Codex.
+**Escopo:** apoio à decisão técnica. Não é certificação, parecer contábil, jurídico ou de auditoria. Nada foi publicado, enviado ao remoto, mesclado na `main` ou liberado como versão.

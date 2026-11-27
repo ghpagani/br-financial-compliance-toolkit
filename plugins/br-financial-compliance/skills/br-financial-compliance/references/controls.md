@@ -1,4 +1,4 @@
-# Implemented controls v0.1.0
+# Implemented controls v0.1.1
 
 All controls are arithmetic or supplied-policy checks, not legal conclusions. REVIEW means investigate; BLOCKER means unsupported/invalid input. No configured finding is not proof of compliance.
 
@@ -9,6 +9,7 @@ All controls are arithmetic or supplied-policy checks, not legal conclusions. RE
 | EXP_DOCUMENT | Required supporting evidence not declared yes |
 | EXP_APPROVAL / PAY_APPROVAL | Required approval not declared yes |
 | EXP_POSSIBLE_DUPLICATE | Same vendor/invoice across valid rows; possible split or repeat |
+| EXP_POSSIBLE_DUPLICATE_AMOUNT | Same vendor, payment amount and date with different invoice references; verify possible split or repeat |
 | EXP_BUDGET_UNMATCHED | No unique matching budget for project/category/payment date |
 | BUDGET_OVERLAP | Overlapping budget periods; matching disabled for affected project/category |
 | BUDGET_OVER | Matched cash paid exceeds supplied budget beyond tolerance |
