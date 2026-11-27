@@ -53,7 +53,7 @@ Escopo (`git diff -M --stat`): 4 renames 100% `examples/` → `plugins/.../skill
 | `python -m unittest discover -s tests` (normal e com `TEMP`/`TMP` inexistentes) | 29 testes: 28 OK + 1 `expectedFailure` (o de T-004) |
 | `git ls-files \| grep examples` | 4 arquivos, só no novo local; `examples/` da raiz não existe |
 | SHA-256 dos 4 arquivos, v0.1.0 vs atual (ignorando fim de linha) | idênticos |
-| Mutação: citar `examples/inexistente.csv` no README | `test_references` falha apontando o arquivo e a referência; README restaurado, árvore limpa |
+| Mutação: acrescentar ao README a citação de um CSV inexistente na pasta de exemplos da skill | `test_references` falha apontando o arquivo e a referência; README restaurado, árvore limpa |
 | Comando de demonstração copiado do README, executado da raiz | saída 1; totais `2850.00` / `9000.00` / `2650.00` |
 
 Ressalvas: o comando de demonstração ficou longo (caminho completo do plugin); o `.gitignore` agora tem exceção específica ao caminho novo (um CSV novo em outro lugar continua ignorado, como desejado). `python -m unittest tests.test_references` (módulo a partir da raiz) falha por import, igual à ressalva da T-001; o comando oficial é `discover -s tests`.
