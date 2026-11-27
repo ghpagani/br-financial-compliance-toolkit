@@ -23,7 +23,7 @@ class MarkdownEscapeTests(unittest.TestCase):
         line = next(line for line in text.splitlines() if line.startswith('- Fonte: '))
         for fragment in expected:
             self.assertIn(fragment, line)
-        raw = re.sub(r'&(?:#[0-9]+|[a-zA-Z]+);', '', line.split(': ', 1)[1])
+        raw = re.sub(r'&(?:#[0-9]+|[a-zA-Z]+);', '', line.split(': ', 1)[1].replace('`@`', ''))
         self.assertFalse(any(char in raw for char in ':/@.*_~#>!-+={}[]()`|$'))
         self.assertFalse(any(unicodedata.category(char) in ('Cf', 'Cc', 'Zl', 'Zp') for char in line))
         return line
@@ -41,7 +41,7 @@ class MarkdownEscapeTests(unittest.TestCase):
         self.verify_source('www.example.test', ['www&#46;example&#46;test'])
 
     def test_email(self):
-        self.verify_source('example@example.test', ['example&#64;example&#46;test'])
+        self.verify_source('example@example.test', ['example`@`example&#46;test'])
 
     def test_emphasis(self):
         self.verify_source('*strong*_word_~~strike~~', ['&#42;strong&#42;', '&#95;word&#95;', '&#126;&#126;strike&#126;&#126;'])

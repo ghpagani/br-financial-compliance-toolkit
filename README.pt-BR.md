@@ -19,7 +19,7 @@ Não calcula encargos legais, impostos nem folha de pagamento completa. Nenhum a
 
 ## Executar localmente
 
-Instale Python 3.10 ou superior. Na raiz do repositório, rode:
+Instale Python 3.10 ou superior. O Python 3.10 chegou ao fim do suporte oficial em outubro de 2026; quando possível, use uma versão ainda mantida. Na raiz do repositório, rode:
 
 ```powershell
 python plugins/br-financial-compliance/skills/br-financial-compliance/scripts/review.py --policy plugins/br-financial-compliance/skills/br-financial-compliance/examples/policy.json --expenses plugins/br-financial-compliance/skills/br-financial-compliance/examples/expenses.csv --payroll plugins/br-financial-compliance/skills/br-financial-compliance/examples/payroll.csv --budgets plugins/br-financial-compliance/skills/br-financial-compliance/examples/budgets.csv --out demo-report.json
@@ -44,8 +44,8 @@ A geração lê apenas arquivos do plugin versionados no Git, normaliza fins de 
 ## Situação da verificação
 
 - Testes: `python -m unittest discover -s tests -v` (somente dados sintéticos), executados localmente no Windows com Python 3.12.
-- Python 3.10 é o mínimo declarado e foi verificado apenas de forma estática (todos os arquivos do projeto são válidos na gramática do 3.10 e não há APIs posteriores da biblioteca padrão); os testes não foram executados no 3.10.
-- O fluxo do GitHub Actions (Ubuntu e Windows, Python 3.10 e 3.12) está configurado, mas não foi executado para esta versão. Não o interprete como resultado aprovado.
+- Python 3.10 é o mínimo declarado para compatibilidade, mas não recebe mais suporte oficial. Consulte as verificações do pull request para as versões efetivamente testadas.
+- O GitHub Actions está configurado para Ubuntu, Windows e macOS com Python 3.10 a 3.15. Consulte os resultados do pull request; a configuração por si só não comprova aprovação.
 - Os manifestos de marketplace são experimentais até a instalação real em um host.
 
 ## Instalar a skill

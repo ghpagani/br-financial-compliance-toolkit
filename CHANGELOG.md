@@ -7,10 +7,11 @@
 - Rule `EXP_POSSIBLE_DUPLICATE_AMOUNT`: same vendor, paid amount and date with different invoice references (review request only). / Regra de possível repetição por fornecedor, valor e data.
 - Structured, recomputable `calculation` (formula, operands, tolerance, comparison, rounding) on discrepancy findings; `rounding_policy` and `decimal_context` at report level. / Memória de cálculo estruturada e recomputável.
 - Reports in English and Brazilian Portuguese (`--lang`) and deterministic Markdown (`--format md`). / Relatórios em inglês e português e Markdown determinístico.
-- `scripts/validate_plugin.py` and `scripts/build_release.py` (byte-reproducible ZIPs and `SHA256SUMS`); CI matrix for Ubuntu/Windows with Python 3.10 and 3.12 (configured, not yet run). / Validação do plugin e ZIPs reproduzíveis.
+- `scripts/validate_plugin.py` and `scripts/build_release.py` (byte-reproducible ZIPs and `SHA256SUMS`); CI matrix for Ubuntu, Windows and macOS with Python 3.10–3.15 (see pull request checks for results). / Validação do plugin e ZIPs reproduzíveis.
 - Tests: CLI exit codes, malformed CSV, Unicode, limits, tolerance boundaries, determinism, output safety, calculation recomputation, localization. / Testes de CLI, CSV malformado, limites e determinismo.
 
 ### Changed / Alterado
+- Markdown policy-source e-mail delimiters are rendered as inert code spans to prevent GitHub autolinks. / Delimitadores de e-mail na fonte da política usam trechos de código para evitar links automáticos no GitHub.
 - **Behavior change:** `row` is now the physical file line where the CSV record starts (it was the record index). Identical for CSV files without multiline fields. / `row` passa a ser a linha física do arquivo; antes era o índice do registro.
 - The report is written through a temporary file and published without overwriting; no partial file is left on failure. It requires a volume that supports hard links; otherwise exit code 3. / Gravação por arquivo temporário; exige volume com hard link.
 - Example data moved inside the skill (`plugins/br-financial-compliance/skills/br-financial-compliance/examples/`); the repository-root `examples/` directory was removed. / Exemplos movidos para dentro da skill.

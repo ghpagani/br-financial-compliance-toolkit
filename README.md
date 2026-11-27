@@ -16,7 +16,7 @@ An independent, local-first toolkit for financial review, internal controls and 
 
 ## Quick start
 
-Python 3.10+; run from repository root. All example data is fictional.
+Python 3.10+; run from repository root. All example data is fictional. Python 3.10 reached upstream end of life in October 2026; use a currently maintained Python version when possible.
 
 ```bash
 python plugins/br-financial-compliance/skills/br-financial-compliance/scripts/review.py --policy plugins/br-financial-compliance/skills/br-financial-compliance/examples/policy.json --expenses plugins/br-financial-compliance/skills/br-financial-compliance/examples/expenses.csv --payroll plugins/br-financial-compliance/skills/br-financial-compliance/examples/payroll.csv --budgets plugins/br-financial-compliance/skills/br-financial-compliance/examples/budgets.csv --out demo-report.json
@@ -39,8 +39,8 @@ The build reads only Git-tracked plugin files, normalizes line endings, fixes ti
 ## Verification status
 
 - Test suite: `python -m unittest discover -s tests -v` (synthetic data only). Run locally on Windows with Python 3.12.
-- Python 3.10 is the declared minimum. It has been checked statically (all project files parse with the 3.10 grammar and no later standard-library APIs were found), not by running the tests on 3.10.
-- The GitHub Actions workflow (Ubuntu and Windows, Python 3.10 and 3.12) is configured but has not been run for this version. Do not read it as a passing result.
+- Python 3.10 is the declared compatibility minimum, but is no longer supported upstream. See the pull request checks for the Python versions actually tested.
+- GitHub Actions is configured for Ubuntu, Windows and macOS with Python 3.10 through 3.15. Consult the pull request checks for actual results; configuration alone is not a passing run.
 - Plugin marketplace manifests are experimental until installed in a real host.
 
 ## Agent Skill
