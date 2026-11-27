@@ -127,3 +127,28 @@ A afirmação "nenhum arredondamento; entrada com até 2 casas; aritmética Deci
 | Planalto (CLT `del5452`, LGPD `l13709`) | **Sem resposta**: timeout em 25 s e 60 s, inclusive na página inicial; IP resolvido. **Não verificado** (pode ser bloqueio de rede local). O registro diz "verified 2026-11-27" para a LGPD: **não reproduzido** nesta máquina |
 
 Mudanças de documentação decorrentes: `docs/SOURCES.md` e `references/sources.md` (commit e data da referência; ADR003 reescrito), `TECHNICAL-AUDIT.md` §5/§7, `DECISIONS.md` D-008/D-009, `RULE-REGISTRY.md`, backlog (T-010, M1).
+
+### T-006 — relatórios pt-BR/en e Markdown · `112aa21` (merge `51a6a87`) — **aceita com correções (T-006b)**
+Escopo (`git diff --stat`): `review.py` (+143/−28 aprox.), `tests/test_localization.py` (novo, 105), `tests/test_calculation.py` (só o texto de `comparison` de `BUDGET_OVER`, previsto), `docs/DATA-CONTRACT.md`, `references/data-contract.md`, `templates/review-report.md`, CHANGELOG. Nada fora do permitido. Diff de `review.py` lido integralmente.
+
+| Verificação (árvore do Claude, pós-merge) | Resultado |
+|---|---|
+| `discover -s tests` (normal e `TEMP`/`TMP` inexistentes); `validate_plugin.py` | 48 testes OK; saída 0 |
+| Diferencial `--lang en` JSON × motor antigo, 12000 entradas + 3000 CSVs (descontando aditivos: `reason`/`field`, regra nova, `calculation`, `rounding_policy`, `decimal_context`, `language`) | 0 divergências (as 13 mensagens em inglês preservadas) |
+| Demo: en/json, en/md, pt-BR/json, pt-BR/md | todas saída 1 (6965, 2692, 7144, 2950 bytes) |
+| Markdown pt-BR gerado 2× | bytes idênticos |
+| Termos proibidos (fraud, irregular, ilegal, crime, culpa, desvio, roubo) no texto pt-BR; campos de máquina | nenhum termo; `code`/`severity`/`module` etc. não traduzidos |
+| Catálogo × `RULE-REGISTRY.md` | coincidem (teste do Codex) |
+
+**Sondagem independente do escape de Markdown** (12 entradas adversariais em `policy.source`, script próprio):
+
+| Entrada | Resultado |
+|---|---|
+| HTML (`<img onerror>`, `<a href=javascript:>`), `[x](javascript:…)`, crase, `|` e quebras de linha, entidades literais, `# cabeçalho`, `> citação`, lista | tratados (sem HTML cru, sem quebra de tabela, sem linhas extras) |
+| URL com esquema (`http://…`, inclusive dentro de `![x](…)` e de `[ref]: …`), `www.…`, e-mail | **permanecem como autolink** em renderizadores GFM — lacuna frente ao requisito "nenhum link ativo" |
+| `*ênfase*`, `_ênfase_`, `~~riscado~~` | permanecem (formatação, risco baixo) |
+| Caracteres bidi e zero-width (`U+202E`, `U+200B`) | **passam** (permitem falsificar visualmente o texto) |
+
+Severidade: baixa a média — `policy.source` é fornecido pelo operador, mas o relatório pode ser compartilhado e renderizado. Correção na **T-006b**.
+Outras ressalvas: (a) o teste hostil do Codex não cobre URL solta, e-mail nem bidi, e a fonte hostil entra numa linha de lista, não numa tabela; (b) `scope` em pt-BR omite "fraude" que o inglês menciona ("No statutory, fraud or audit opinion"); (c) `--out` ainda diz "New JSON output"; (d) em inglês os rótulos de cobertura/totais do Markdown usam a chave crua; (e) Python 3.10 e CI hospedado não exercitados.
+
