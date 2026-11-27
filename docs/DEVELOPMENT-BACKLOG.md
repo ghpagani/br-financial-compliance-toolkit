@@ -22,7 +22,7 @@ Legenda de status: `A fazer` · `Delegada` · `Em revisão` · `Aceita` · `Bloq
 | T-003 | Exemplos e política dentro do plugin; corrigir referências | Codex | T-001 | Aceita (b10b3ce) |
 | T-002 | ZIP reproduzível + validação de estrutura do plugin + CI | Codex | T-003 | Aceita (fc545f1) |
 | T-004 | Endurecimento do motor: motivos de rejeição, quase-duplicidade, gravação atômica | Codex | T-001, T-007 | Aceita (7fd5aa7) |
-| T-005 | Memória de cálculo estruturada | Codex | T-004 | A fazer |
+| T-005 | Memória de cálculo estruturada | Codex | T-004 | Delegada |
 | T-006 | Relatórios PT/EN e saída Markdown | Codex | T-005 | A fazer |
 | T-008 | Documentação, licenças, atribuições, versão 0.1.1, CHANGELOG | Claude | T-002, T-006 | A fazer |
 | T-009 | Governança: RULE-REGISTRY e esquema de regra (sem regra legal) | Claude | — | Em andamento |

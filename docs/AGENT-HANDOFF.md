@@ -29,6 +29,7 @@ Os dois worktrees compartilham o mesmo repositório Git local, então o Claude l
 | 2026-11-27 | T-003 | Implementador | `msg_bd7d585725d7` | `3b1fe9a` | Entregue `eb400ce`; aceita, integrada em `b10b3ce` |
 | 2026-11-27 | T-002 | Implementador | `msg_c784fcbf05f9` | `651f1b4` | Entregue `603a667` (rebaseada em `644cbf8`); aceita, integrada em `fc545f1` |
 | 2026-11-27 | T-004 | Implementador | `msg_411f1efe178a` | `b26cdd6` | Entregue `62b6b1f`; aceita, integrada em `7fd5aa7` |
+| 2026-11-27 | T-005 | Implementador | `msg_5e46db943fca` | `79f654c` | Enviada; aguardando entrega |
 
 (Novas linhas são adicionadas a cada `send`/entrega. Uma tarefa só consta como delegada com o ID de mensagem aqui.)
 
