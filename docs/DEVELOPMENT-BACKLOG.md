@@ -21,7 +21,7 @@ Legenda de status: `A fazer` · `Delegada` · `Em revisão` · `Aceita` · `Bloq
 | T-007 | Testes de CLI, CSV malformado/Unicode e casos extremos | Codex | T-001 | Aceita (d2d94e5) |
 | T-003 | Exemplos e política dentro do plugin; corrigir referências | Codex | T-001 | Aceita (b10b3ce) |
 | T-002 | ZIP reproduzível + validação de estrutura do plugin + CI | Codex | T-003 | Aceita (fc545f1) |
-| T-004 | Endurecimento do motor: motivos de rejeição, quase-duplicidade, gravação atômica | Codex | T-001, T-007 | Delegada |
+| T-004 | Endurecimento do motor: motivos de rejeição, quase-duplicidade, gravação atômica | Codex | T-001, T-007 | Aceita (7fd5aa7) |
 | T-005 | Memória de cálculo estruturada | Codex | T-004 | A fazer |
 | T-006 | Relatórios PT/EN e saída Markdown | Codex | T-005 | A fazer |
 | T-008 | Documentação, licenças, atribuições, versão 0.1.1, CHANGELOG | Claude | T-002, T-006 | A fazer |
@@ -116,7 +116,7 @@ Ordem de execução do Codex: **T-001 → T-007 → T-003 → T-002 → T-004 �
 
 ## T-008 — Documentação, licenças e versão (Claude)
 
-Revisar `README*`, `INSTALL`, `SECURITY`, `CONTRIBUTING`, `LICENSE` (raiz, plugin e skill), `SOURCES.md` (atribuição à Receita Federal sem alegar vínculo); atualizar `CHANGELOG.md`, `ROADMAP.md`; subir para `0.1.1` em `review.py` e nos 2 `plugin.json`; manter PT/EN. Executa após T-002 e T-006.
+**Limitação a documentar (T-004):** a gravação do relatório usa hard link (`os.link`); em sistemas de arquivos sem suporte (FAT/exFAT, vários compartilhamentos de rede e unidades virtuais de nuvem) a execução falha com código 3 e não grava nada — destino deve ser um volume local NTFS/ext4/APFS. Documentar em INSTALL e README PT/EN. Revisar `README*`, `INSTALL`, `SECURITY`, `CONTRIBUTING`, `LICENSE` (raiz, plugin e skill), `SOURCES.md` (atribuição à Receita Federal sem alegar vínculo); atualizar `CHANGELOG.md`, `ROADMAP.md`; subir para `0.1.1` em `review.py` e nos 2 `plugin.json`; manter PT/EN. Executa após T-002 e T-006.
 
 ## T-009 — Governança normativa (Claude)
 

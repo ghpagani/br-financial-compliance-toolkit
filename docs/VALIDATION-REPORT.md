@@ -74,3 +74,29 @@ Escopo (`git diff --stat`): `scripts/build_release.py` (84 linhas), `scripts/val
 
 **Não verificado:** o CI hospedado (matriz Ubuntu/Windows × Python 3.10/3.12) — o workflow foi escrito, não executado; não há alegação de aprovação. Python 3.10 não foi exercitado localmente (só 3.12).
 **Limites conhecidos:** (1) a igualdade de hash comprova reprodutibilidade na mesma versão de zlib; ZIPs gerados em máquinas com zlib diferente podem divergir nos bytes comprimidos mesmo com conteúdo idêntico — o CI só compara dois builds no mesmo runner; (2) o build lê a árvore de trabalho dos arquivos versionados, então alterações locais não commitadas entram no ZIP; (3) `validate_plugin.py` só checa referências entre crases em `SKILL.md` e `references/*.md`.
+
+### T-004 — endurecimento do motor · `62b6b1f` (integrada em `7fd5aa7`)
+Escopo (`git diff --stat`): `review.py` (+166/−63 linhas aprox.), `tests/test_hardening.py` (novo, 117), `tests/test_edge_cases.py` (só remoção do `expectedFailure`), CHANGELOG (1 linha), `docs/DATA-CONTRACT.md`, `references/data-contract.md`, `references/controls.md`, `docs/RULE-REGISTRY.md`. Nada fora do permitido. Leitura integral do diff de `review.py` feita antes de rodar.
+
+| Verificação (árvore do Claude, pós-merge) | Resultado |
+|---|---|
+| `discover -s tests` (normal e `TEMP`/`TMP` inexistentes) | 40 testes OK, 0 `expectedFailure` |
+| `validate_plugin.py` | saída 0 |
+| **Teste diferencial** motor antigo `b26cdd6` × novo, `review()`, 6000 entradas aleatórias (maioria inválida; 401 linhas válidas) | 0 divergências |
+| Idem, modo enviesado a linhas válidas com pools pequenos, 6000 entradas | 0 divergências; 32101 linhas válidas processadas; os 13 códigos de achado exercitados; regra nova em 808 casos (1809 achados) |
+| Diferencial de `read_csv`, 3000 arquivos sintéticos (BOM, CRLF, linhas em branco, curtas, longas, aspas, aspas abertas, cabeçalhos inválidos) sem multilinha | 0 divergências (1343 ok nos dois, 1657 erro nos dois) |
+| JSON da demo, motor antigo × novo | idêntico byte a byte (5026 bytes) |
+| CLI: saída relativa; sobrescrita; diretório inexistente; entrada inválida; pasta com espaço | exit 1 / 3 / 3 / 3 / 1; original preservado; nenhum arquivo parcial nem `.brfc-*.tmp` restante |
+| Desempenho, 100000 linhas | leitura 0,25→0,23 s; revisão 0,63→~0,80 s (+~25%), aceito |
+
+Diferencial: o que foi descontado da comparação (aditivo por desenho): chaves `reason`/`field` nos achados `INPUT_INVALID`, achados `EXP_POSSIBLE_DUPLICATE_AMOUNT` e o status das linhas sinalizadas só por ela. Todo o resto (achados, severidades, totais, cobertura, orçamentos, limitações) foi comparado integralmente.
+
+**Reasons observados** nas execuções: CURRENCY, DUPLICATE_ID, INVALID_AMOUNT, INVALID_BUDGET_DATES, INVALID_DATE, INVALID_FLAG, INVALID_PAYROLL, INVALID_REFERENCE, MALFORMED_ROW, OUT_OF_PERIOD. `PARTIAL_COMPETENCE` só é coberto por teste unitário (exige vigência terminando no meio do mês). `HEADER` existe no conjunto fechado mas é **inalcançável** (cabeçalho inválido aborta com saída 3).
+
+**Mudança de comportamento (registrada no CHANGELOG):** `row` passa a ser a linha física de início do registro; idêntico ao anterior em CSV sem campo multilinha (provado pelo diferencial de `read_csv`).
+
+**Ressalvas e riscos conhecidos:**
+1. A publicação usa `os.link`: falha fechada (saída 3, nada gravado) em volumes sem hard link (FAT/exFAT, muitos compartilhamentos de rede, unidades virtuais de nuvem). Intencional (evita arquivo parcial); falta documentar em INSTALL/README (T-008). Não testado em volume sem hard link.
+2. Se `os.unlink` do temporário falhasse *depois* do `os.link` bem-sucedido, o relatório existiria com saída 3 e um `.brfc-*.tmp` restante. Improvável; não reproduzido.
+3. `EXP_POSSIBLE_DUPLICATE_AMOUNT`: num grupo com notas {A, A, B} todas as 3 linhas são sinalizadas, inclusive o par A-A que já tem `EXP_POSSIBLE_DUPLICATE` (ruído, não erro).
+4. Python 3.10 não exercitado localmente; CI hospedado não executado.
