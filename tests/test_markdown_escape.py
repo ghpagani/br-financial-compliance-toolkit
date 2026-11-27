@@ -24,9 +24,15 @@ class MarkdownEscapeTests(unittest.TestCase):
         for fragment in expected:
             self.assertIn(fragment, line)
         raw = re.sub(r'&(?:#[0-9]+|[a-zA-Z]+);', '', line.split(': ', 1)[1])
-        self.assertFalse(any(char in raw for char in ':/@.*_~#>!-+={}[]()`|'))
-        self.assertFalse(any(unicodedata.category(char) in ('Cf', 'Cc') for char in line))
+        self.assertFalse(any(char in raw for char in ':/@.*_~#>!-+={}[]()`|$'))
+        self.assertFalse(any(unicodedata.category(char) in ('Cf', 'Cc', 'Zl', 'Zp') for char in line))
         return line
+
+    def test_line_paragraph_separators_and_math_dollar(self):
+        # Found by Claude's independent probe after T-006b: U+2028/U+2029 split lines in some
+        # viewers/scripts, and '$...$' is rendered as math by GitHub-flavored Markdown.
+        self.verify_source('a b c\u0085d', ['a b c d'])
+        self.verify_source('$x^2$ e $$y$$', ['&#36;x^2&#36; e &#36;&#36;y&#36;&#36;'])
 
     def test_scheme_url(self):
         self.verify_source('http://example.test/a', ['http&#58;&#47;&#47;example&#46;test&#47;a'])

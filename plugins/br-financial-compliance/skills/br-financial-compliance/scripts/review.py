@@ -317,8 +317,9 @@ def markdown_escape(value):
 
 def markdown_escape_free_text(value):
     # Encode punctuation before Markdown parsing; preserve HTML escaping for angle brackets.
-    punctuation = frozenset(':/@.*_~#!-+={}|`[]()\\')
-    return ''.join(' ' if unicodedata.category(char) in ('Cf', 'Cc') else
+    # '$' avoids math rendering; Zl/Zp (U+2028/U+2029) act as line breaks in some viewers and scripts.
+    punctuation = frozenset(':/@.*_~#!-+={}|`[]()\\$')
+    return ''.join(' ' if unicodedata.category(char) in ('Cf', 'Cc', 'Zl', 'Zp') else
                    f'&#{ord(char)};' if char in punctuation else
                    html.escape(char, quote=True) for char in str(value))
 
