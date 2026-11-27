@@ -23,7 +23,7 @@ Legenda de status: `A fazer` · `Delegada` · `Em revisão` · `Aceita` · `Bloq
 | T-002 | ZIP reproduzível + validação de estrutura do plugin + CI | Codex | T-003 | Aceita (fc545f1) |
 | T-004 | Endurecimento do motor: motivos de rejeição, quase-duplicidade, gravação atômica | Codex | T-001, T-007 | Aceita (7fd5aa7) |
 | T-005 | Memória de cálculo estruturada | Codex | T-004 | Aceita (d7da3d3) |
-| T-006 | Relatórios PT/EN e saída Markdown | Codex | T-005 | Aceita com correções (T-006b); merge 51a6a87 |
+| T-006 | Relatórios PT/EN e saída Markdown | Codex | T-005 | Aceita (merge 51a6a87; correções em T-006b `a16982e` e T-006c `cce3b0e`) |
 | T-006b | Correções do Markdown/i18n apontadas na revisão da T-006 | Codex | T-006 | Delegada |
 | T-008 | Documentação, licenças, atribuições, versão 0.1.1, CHANGELOG | Claude | T-002, T-006 | Parcial: docs reescritos; faltam bump de versão, reverificar SECURITY após T-006b e versão PT do contrato de dados |
 | T-009 | Governança: RULE-REGISTRY e esquema de regra (sem regra legal) | Claude | — | Em andamento |

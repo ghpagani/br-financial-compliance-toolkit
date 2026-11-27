@@ -15,7 +15,7 @@ from decimal import Decimal, InvalidOperation, getcontext, localcontext
 from pathlib import Path
 from uuid import uuid4
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 ZERO = Decimal('0.00')
 CENT = Decimal('0.01')
 FIELDS = {
