@@ -23,7 +23,7 @@ Legenda de status: `A fazer` · `Delegada` · `Em revisão` · `Aceita` · `Bloq
 | T-002 | ZIP reproduzível + validação de estrutura do plugin + CI | Codex | T-003 | Aceita (fc545f1) |
 | T-004 | Endurecimento do motor: motivos de rejeição, quase-duplicidade, gravação atômica | Codex | T-001, T-007 | Aceita (7fd5aa7) |
 | T-005 | Memória de cálculo estruturada | Codex | T-004 | Aceita (d7da3d3) |
-| T-006 | Relatórios PT/EN e saída Markdown | Codex | T-005 | A fazer |
+| T-006 | Relatórios PT/EN e saída Markdown | Codex | T-005 | Delegada |
 | T-008 | Documentação, licenças, atribuições, versão 0.1.1, CHANGELOG | Claude | T-002, T-006 | A fazer |
 | T-009 | Governança: RULE-REGISTRY e esquema de regra (sem regra legal) | Claude | — | Em andamento |
 | T-010 | Leitura integral dos ADRs/Flyway da RTC; verificar links e vigência (requer rede) | Claude | — | A fazer |
