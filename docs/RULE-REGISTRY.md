@@ -12,6 +12,8 @@ Uma regra legal só pode ser usada operacionalmente com `status_validacao = vali
 
 Versão de regra = `policy.version` informada pelo usuário. Fonte: política do usuário (a demo é fictícia). Arredondamento: nenhum (entrada com até 2 casas, aritmética decimal exata). Status: `aritmetica`, sem validação normativa aplicável.
 
+Achados com valores comparáveis incluem memória de cálculo estruturada com fórmula fixa, operandos decimais validados, tolerância e comparação; o relatório informa a precisão do contexto decimal.
+
 | Código | Módulo | Severidade | Condição (resumo) | Fórmula |
 |---|---|---|---|---|
 | `INPUT_INVALID` | todos | BLOCKER | linha inválida, fora da vigência/moeda, id duplicado, competência parcial, `deductions > gross` | — |

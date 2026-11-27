@@ -9,7 +9,7 @@ import re
 import sys
 from collections import Counter, defaultdict
 from datetime import date
-from decimal import Decimal, InvalidOperation, localcontext
+from decimal import Decimal, InvalidOperation, getcontext, localcontext
 from pathlib import Path
 from uuid import uuid4
 
@@ -21,9 +21,16 @@ FIELDS = {
     'payroll': 'id period employee gross deductions net paid currency approval'.split(),
     'budgets': 'project category start end approved currency'.split(),
 }
-REASONS = frozenset({'HEADER', 'MALFORMED_ROW', 'DUPLICATE_ID', 'CURRENCY',
+REASONS = frozenset({'MALFORMED_ROW', 'DUPLICATE_ID', 'CURRENCY',
     'OUT_OF_PERIOD', 'PARTIAL_COMPETENCE', 'INVALID_DATE', 'INVALID_AMOUNT',
     'INVALID_REFERENCE', 'INVALID_FLAG', 'INVALID_PAYROLL', 'INVALID_BUDGET_DATES'})
+ROUNDING_POLICY = 'No rounding applied; input limited to two decimal places, Decimal arithmetic is exact.'
+CALCULATION_RULES = {
+    'EXP_PAYMENT_DIFF': ('difference = paid - gross', 'abs(difference) > tolerance'),
+    'PAY_NET_DIFF': ('difference = net - (gross - deductions)', 'abs(difference) > tolerance'),
+    'PAY_PAID_DIFF': ('difference = paid - net', 'abs(difference) > tolerance'),
+    'BUDGET_OVER': ('difference = matched_paid - approved', 'actual > expected + tolerance'),
+}
 
 
 class InputError(ValueError):
@@ -126,10 +133,14 @@ def _review(expenses, payroll, budgets, policy):
     budget_defs = defaultdict(list)
     eligible_expenses = []
     excluded_expense_rows = []
-    def add(kind, row, code, severity, message, expected=None, actual=None):
+    def add(kind, row, code, severity, message, expected=None, actual=None, operands=None):
         f = dict(module=kind, row=row, code=code, severity=severity, message=message, rule_version=policy['version'])
         if expected is not None:
             f.update(expected=str(expected), actual=str(actual), difference=str(actual-expected))
+            formula, comparison = CALCULATION_RULES[code]
+            f['calculation'] = {'formula': formula,
+                'operands': {name: str(value) for name, value in operands.items()},
+                'tolerance': str(tol), 'comparison': comparison, 'rounding': ROUNDING_POLICY}
         findings.append(f)
     def invalid(kind, n, exc):
         # Do not include arbitrary input or exception text in reports.
@@ -182,7 +193,7 @@ def _review(expenses, payroll, budgets, policy):
             invoice_groups[(vendor,invoice)].append(n)
             amount_groups[(vendor,paid,day)].append((n,invoice))
             if abs(gross-paid)>tol:
-                add('expenses',n,'EXP_PAYMENT_DIFF','REVIEW','Gross versus paid differs; verify retention, installments or credits.',gross,paid)
+                add('expenses',n,'EXP_PAYMENT_DIFF','REVIEW','Gross versus paid differs; verify retention, installments or credits.',gross,paid,{'gross':gross,'paid':paid})
             if policy['require_document'] and r['document']!='yes':
                 add('expenses',n,'EXP_DOCUMENT','REVIEW','Evidence not confirmed; request supporting document.')
             if policy['require_approval'] and r['approval']!='yes':
@@ -215,8 +226,8 @@ def _review(expenses, payroll, budgets, policy):
             if deductions>gross: raise InputError('INVALID_PAYROLL','deductions')
             payroll_paid.append(paid); payroll_groups[(emp,r['period'])].append(n)
             expected=gross-deductions
-            if abs(expected-net)>tol: add('payroll',n,'PAY_NET_DIFF','REVIEW','Reported net differs from gross less reported deductions; not a statutory calculation.',expected,net)
-            if abs(net-paid)>tol: add('payroll',n,'PAY_PAID_DIFF','REVIEW','Reported net versus paid differs; reconcile payment.',net,paid)
+            if abs(expected-net)>tol: add('payroll',n,'PAY_NET_DIFF','REVIEW','Reported net differs from gross less reported deductions; not a statutory calculation.',expected,net,{'gross':gross,'deductions':deductions,'net':net})
+            if abs(net-paid)>tol: add('payroll',n,'PAY_PAID_DIFF','REVIEW','Reported net versus paid differs; reconcile payment.',net,paid,{'net':net,'paid':paid})
             if policy['require_approval'] and r['approval']!='yes': add('payroll',n,'PAY_APPROVAL','REVIEW','Approval not confirmed.')
             results.append({'module':'payroll','row':n,'processed':True})
         except (ValueError,TypeError,KeyError,InvalidOperation) as exc:
@@ -230,13 +241,14 @@ def _review(expenses, payroll, budgets, policy):
         for a,b,limit,n in defs:
             actual=spend[n]
             budget_results.append({'row':n,'approved':str(limit),'matched_paid':str(actual),'remaining':str(limit-actual),'basis':'cash paid from supplied expense rows only'})
-            if actual>limit+tol: add('budgets',n,'BUDGET_OVER','REVIEW','Matched cash payments exceed supplied budget.',limit,actual)
+            if actual>limit+tol: add('budgets',n,'BUDGET_OVER','REVIEW','Matched cash payments exceed supplied budget.',limit,actual,{'approved':limit,'matched_paid':actual})
     counts=Counter(f['severity'] for f in findings)
     flagged={(f['module'],f['row']) for f in findings}
     for r in results:
         flags=(r['module'],r['row']) in flagged
         r['status']='NOT_PROCESSED' if not r['processed'] else ('REVIEW' if flags else 'NO_CONFIGURED_FINDING')
     return {'tool_version':VERSION,'policy_version':policy['version'],'policy_source':policy['source'],'policy_period':[str(start),str(end)],'currency':'BRL',
+        'rounding_policy':ROUNDING_POLICY,'decimal_context':{'precision':getcontext().prec},
         'scope':'Arithmetic and supplied-policy checks only. No statutory, fraud or audit opinion.',
         'coverage':{'expense_rows':len(expenses),'expense_processed':len(eligible_expenses),'payroll_rows':len(payroll),'payroll_processed':len(payroll_paid),'budget_rows':len(budgets),'budget_evaluated':len(budget_results),'budget_unmatched_expenses':sum(f['code']=='EXP_BUDGET_UNMATCHED' for f in findings)},
         'totals':{'expense_paid_processed':str(sum((p for _,p in eligible_expenses),ZERO)),'payroll_paid_processed':str(sum(payroll_paid,ZERO)),'expense_paid_matched_to_budget':str(sum(spend.values(),ZERO))},
